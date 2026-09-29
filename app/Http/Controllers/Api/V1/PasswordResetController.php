@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Services\PasswordResetService;
+use Illuminate\Http\JsonResponse;
+
+class PasswordResetController extends Controller
+{
+    public function __construct(private readonly PasswordResetService $resets) {}
+
+    /** POST /auth/forgot-password → ALWAYS the same 200 answer (no account enumeration). */
+    public function forgot(ForgotPasswordRequest $request): JsonResponse
+    {
+        $this->resets->sendCode($request->validated('email'));
+
+        return response()->json([
+            'message' => 'Kung may account ang email na ito, nagpadala kami ng 6-digit code. Valid ito nang 15 minuto.',
+        ]);
+    }
+
+    /** POST /auth/reset-password → 200, or 422 INVALID_OR_EXPIRED_CODE */
+    public function reset(ResetPasswordRequest $request): JsonResponse
+    {
+        $this->resets->reset(
+            $request->validated('email'),
+            $request->validated('code'),
+            $request->validated('password'),
+        );
+
+        return response()->json(['message' => 'Napalitan na ang password mo. Mag-login ulit.']);
+    }
+}
