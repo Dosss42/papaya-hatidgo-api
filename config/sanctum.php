@@ -50,7 +50,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Papaya HatidGo: mobile logins last 30 days (phase-5 decision); logout revokes immediately.
+    'expiration' => 60 * 24 * 30,
 
     /*
     |--------------------------------------------------------------------------

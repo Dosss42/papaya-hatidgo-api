@@ -95,4 +95,26 @@ class RegisterTest extends TestCase
         $this->assertDatabaseCount('users', 0);
         $this->assertDatabaseCount('passengers', 0);
     }
+
+    public function test_validation_messages_are_in_taglish(): void
+    {
+        // lang/fil/validation.php: the app shows these messages to the user word for word.
+        $this->postJson('/api/v1/auth/register', $this->payload([
+            'first_name' => '',
+            'password' => 'abc',
+            'password_confirmation' => 'abc',
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.first_name.0', 'Ilagay ang pangalan.')
+            ->assertJsonPath('errors.password', [
+                'Dapat 8 o higit pang character ang password.',
+                'Dapat may kahit isang numero ang password.',
+            ]);
+
+        $this->postJson('/api/v1/auth/register', $this->payload([
+            'password' => '12345678',
+            'password_confirmation' => '12345678',
+        ]))
+            ->assertJsonPath('errors.password.0', 'Dapat may kahit isang letra ang password.');
+    }
 }

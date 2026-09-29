@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ApiErrorRenderer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -8,6 +9,7 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -18,4 +20,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Every error on an API route uses the one standard JSON format (see ApiErrorRenderer).
+        // Errors are still REPORTED (logged) as usual; this only controls the response.
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiErrorRenderer::render($e);
+            }
+
+            return null; // non-API routes keep Laravel's default handling
+        });
     })->create();
