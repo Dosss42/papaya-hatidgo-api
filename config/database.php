@@ -61,6 +61,9 @@ return [
             // Always InnoDB, whatever the server's default (WAMP defaults to MyISAM, which
             // silently ignores foreign keys and has no transactions).
             'engine' => 'InnoDB',
+            // Laravel works in UTC; make MySQL's NOW()/CURRENT_TIMESTAMP (column defaults) UTC too.
+            // Without this, WAMP uses the PC's zone (UTC+8) and DB-filled times are 8 hours "ahead".
+            'timezone' => '+00:00',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
