@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +14,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Configuration the system needs in EVERY environment (safe to re-run).
+        $this->call([
+            SystemSettingsSeeder::class,
+            FareSettingsSeeder::class,
+            SubscriptionPlanSeeder::class,
+            DriverRequirementSeeder::class,
         ]);
+
+        // Sample accounts with known passwords: local development and automated tests ONLY.
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(DevelopmentSeeder::class);
+        }
     }
 }
