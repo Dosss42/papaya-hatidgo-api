@@ -195,6 +195,18 @@ class SubscriptionTest extends TestCase
         $this->assertSame(TransactionStatus::Expired, SubscriptionTransaction::where('subscription_id', $id)->first()->status);
     }
 
+    public function test_test_mode_follows_the_gateway_not_the_app(): void
+    {
+        Sanctum::actingAs($this->driverUser());
+        $this->getJson('/api/v1/subscriptions/current')->assertJsonPath('data.test_mode', true); // fake gateway
+
+        config(['payments.gateway' => 'paymongo', 'services.paymongo.secret_key' => 'sk_test_abc']);
+        $this->getJson('/api/v1/subscriptions/current')->assertJsonPath('data.test_mode', true);
+
+        config(['services.paymongo.secret_key' => 'sk_live_abc']);
+        $this->getJson('/api/v1/subscriptions/current')->assertJsonPath('data.test_mode', false);
+    }
+
     public function test_another_users_subscription_is_not_found(): void
     {
         [$id] = $this->checkout($this->driverUser(), 'drv_1m');

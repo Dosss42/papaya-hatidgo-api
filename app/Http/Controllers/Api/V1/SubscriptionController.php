@@ -44,7 +44,16 @@ class SubscriptionController extends Controller
             'current' => $resource($summary['current']),
             'renewal' => $resource($summary['renewal']),
             'pending' => $resource($summary['pending']),
+            // Whether payments move real money: the app's "Test mode" tag follows the GATEWAY,
+            // not the app's build (a dev build on live keys must never say "no real money").
+            'test_mode' => self::testMode(),
         ]]);
+    }
+
+    private static function testMode(): bool
+    {
+        return config('payments.gateway') === 'fake'
+            || str_starts_with((string) config('services.paymongo.secret_key'), 'sk_test_');
     }
 
     /** GET /subscriptions: my periods, newest first. */

@@ -14,6 +14,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\DriverComplianceService;
+use App\Support\BusinessDate;
 use Database\Seeders\DriverRequirementSeeder;
 use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,7 +64,7 @@ class DriverComplianceTest extends TestCase
             'vehicle_id' => $isVehiclePaper ? $driver->active_vehicle_id : null,
             'status' => $status,
             'is_current' => $current,
-            'expires_at' => $expires ? now()->modify($expires)->toDateString() : null,
+            'expires_at' => $expires ? BusinessDate::today()->modify($expires)->toDateString() /* Philippine calendar, like the API */ : null,
         ]);
     }
 
@@ -120,7 +121,7 @@ class DriverComplianceTest extends TestCase
     {
         $driver = $this->driver();
         $this->uploadAll($driver, DocumentStatus::Approved);
-        DriverDocument::where('driver_id', $driver->id)->first()->forceFill(['expires_at' => now()->subDay()->toDateString()])->save();
+        DriverDocument::where('driver_id', $driver->id)->first()->forceFill(['expires_at' => BusinessDate::today()->subDay()->toDateString()])->save();
 
         $this->assertSame(ComplianceStatus::Expired, $this->compliance->recalculate($driver));
     }

@@ -12,6 +12,7 @@ use App\Models\DriverDocument;
 use App\Models\DriverRequirement;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Support\BusinessDate;
 use Database\Seeders\DriverRequirementSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -58,7 +59,7 @@ class AdminReviewTest extends TestCase
             'requirement_id' => $requirement->id,
             'files' => $files,
             'sides' => ['front', 'back'],
-            'expires_at' => $expires ? now()->modify($expires)->toDateString() : null,
+            'expires_at' => $expires ? BusinessDate::today()->modify($expires)->toDateString() /* Philippine calendar, like the API */ : null,
         ])->assertCreated()->json('data.id');
     }
 

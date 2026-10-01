@@ -12,6 +12,7 @@ use App\Models\DriverRequirementReview;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\DriverComplianceService;
+use App\Support\BusinessDate;
 use Database\Seeders\DriverRequirementSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -160,7 +161,7 @@ class DocumentTest extends TestCase
         $this->upload('clearance', [UploadedFile::fake()->image('c.jpg')], ['expires_at' => null])
             ->assertUnprocessable()->assertJsonPath('errors.expires_at.0', 'Ilagay ang expiry date.');
 
-        $this->upload('clearance', [UploadedFile::fake()->image('c.jpg')], ['expires_at' => now()->subDay()->toDateString()])
+        $this->upload('clearance', [UploadedFile::fake()->image('c.jpg')], ['expires_at' => BusinessDate::today()->subDay()->toDateString()])
             ->assertUnprocessable()->assertJsonPath('errors.expires_at.0', 'Dapat hindi pa lumilipas ang expiry date.');
     }
 
