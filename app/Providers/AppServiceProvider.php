@@ -13,6 +13,9 @@ use App\Models\SubscriptionPlan;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Payments\FakeGateway;
+use App\Payments\PaymentGateway;
+use App\Payments\PayMongoGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -20,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,7 +32,29 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Which payment provider SubscriptionService talks to (Phase 8, config/payments.php).
+        $this->app->bind(PaymentGateway::class, function (): PaymentGateway {
+            $gateway = config('payments.gateway');
+
+            if ($gateway === 'paymongo') {
+                return new PayMongoGateway(
+                    (string) config('services.paymongo.secret_key'),
+                    (string) config('services.paymongo.base_url'),
+                    config('payments.methods'),
+                );
+            }
+
+            if ($gateway === 'fake') {
+                // The fake "payment page" must never take real users' "payments".
+                if ($this->app->isProduction()) {
+                    throw new RuntimeException('PAYMENT_GATEWAY=fake is not allowed in production.');
+                }
+
+                return new FakeGateway;
+            }
+
+            throw new RuntimeException("Unknown PAYMENT_GATEWAY: {$gateway}");
+        });
     }
 
     /**
@@ -88,6 +114,11 @@ class AppServiceProvider extends ServiceProvider
         // 10 document uploads per 10 minutes per driver (Phase 7): plenty for 4 papers and a few
         // retakes, but a broken or malicious client can't fill the disk.
         RateLimiter::for('uploads', fn (Request $request) => Limit::perMinutes(10, 10)
+            ->by((string) $request->user()?->id));
+
+        // 10 new checkouts per 10 minutes per user (Phase 8): enough to change one's mind about
+        // a plan several times, not enough to flood PayMongo with checkout sessions from one account.
+        RateLimiter::for('checkout', fn (Request $request) => Limit::perMinutes(10, 10)
             ->by((string) $request->user()?->id));
     }
 }

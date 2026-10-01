@@ -3,11 +3,15 @@
 use App\Http\Controllers\Api\V1\Admin\DriverAccountController as AdminDriverAccountController;
 use App\Http\Controllers\Api\V1\Admin\DriverDocumentController as AdminDriverDocumentController;
 use App\Http\Controllers\Api\V1\Admin\DriverVerificationController;
+use App\Http\Controllers\Api\V1\Admin\SubscriptionController as AdminSubscriptionController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DriverAvailabilityController;
 use App\Http\Controllers\Api\V1\DriverDocumentController;
 use App\Http\Controllers\Api\V1\DriverRequirementController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
+use App\Http\Controllers\Api\V1\PayMongoWebhookController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +24,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     // Public
     Route::get('/health', HealthController::class);
+
+    // PayMongo → us (Phase 8). Public, but every request must carry PayMongo's signature.
+    Route::post('/webhooks/paymongo', PayMongoWebhookController::class);
 
     // Authentication (phase-5-authentication.md § 3)
     Route::prefix('auth')->group(function () {
@@ -44,6 +51,21 @@ Route::prefix('v1')->group(function () {
         Route::get('/vehicles', [VehicleController::class, 'index']);
         Route::post('/vehicles', [VehicleController::class, 'store']);
         Route::patch('/vehicles/{vehicle}', [VehicleController::class, 'update'])->whereNumber('vehicle');
+
+        // The go-online gate (Phase 8 step 8.4): the checklist, and going online only when it passes.
+        Route::get('/drivers/me/eligibility', [DriverAvailabilityController::class, 'eligibility']);
+        Route::patch('/drivers/me/availability', [DriverAvailabilityController::class, 'update']);
+    });
+
+    // Subscriptions: passengers (to book) and drivers (to go online), Phase 8.
+    Route::middleware(['auth:sanctum', 'role:passenger,driver'])->group(function () {
+        Route::get('/subscription-plans', [SubscriptionController::class, 'plans']);
+        Route::get('/subscriptions/current', [SubscriptionController::class, 'current']);
+        Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+        Route::post('/subscriptions', [SubscriptionController::class, 'store'])->middleware('throttle:checkout');
+        Route::get('/subscriptions/{subscription}', [SubscriptionController::class, 'show'])->whereNumber('subscription');
+        Route::post('/subscriptions/{subscription}/cancel', [SubscriptionController::class, 'cancel'])->whereNumber('subscription');
+        Route::get('/subscription-transactions', [SubscriptionController::class, 'transactions']);
     });
 
     // Admin: driver verification (step 7.4). Postman until the admin web exists (Phase 14).
@@ -60,5 +82,9 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/drivers/{driver}/suspend', [AdminDriverAccountController::class, 'suspend'])->whereNumber('driver');
         Route::post('/drivers/{driver}/reactivate', [AdminDriverAccountController::class, 'reactivate'])->whereNumber('driver');
+
+        // Subscriptions (Phase 8): find a user's subscriptions; the audited manual activation (demo fallback).
+        Route::get('/subscriptions', [AdminSubscriptionController::class, 'index']);
+        Route::post('/subscriptions/{subscription}/activate', [AdminSubscriptionController::class, 'activate'])->whereNumber('subscription');
     });
 });

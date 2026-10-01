@@ -1,70 +1,192 @@
 {
   "info": {
-    "name": "Papaya HatidGo API (Phase 7: driver verification)",
-    "description": "Play ADMIN until the admin web exists (Phase 14).\n\nOrder: 1) Admin › Log in (saves the token) → 2) Admin › Review queue (saves the first document_id and driver_id) → 3) Admin › Document detail (saves file_id) → View file / Approve / Reject / Request resubmission.\n\nThe Driver folder lets you upload a test document without the phone (log in as driver2@example.test, then pick any JPG/PNG/PDF in the 'files[]' field).\n\nNeeds: php artisan serve running, MySQL (WAMP) green, seeded accounts (password: password). Language: set the collection variable 'lang' to en or fil.",
+    "name": "Papaya HatidGo API (Phase 7-8: driver verification + subscriptions)",
+    "description": "Play ADMIN until the admin web exists (Phase 14).\n\nOrder: 1) Admin › Log in (saves the token) → 2) Admin › Review queue (saves the first document_id and driver_id) → 3) Admin › Document detail (saves file_id) → View file / Approve / Reject / Request resubmission.\n\nThe Driver folder lets you upload a test document without the phone (log in as driver2@example.test, then pick any JPG/PNG/PDF in the 'files[]' field).\n\nNeeds: php artisan serve running, MySQL (WAMP) green, seeded accounts (password: password). Language: set the collection variable 'lang' to en or fil.\n\nPhase 8 - Subscriptions folder (as driver2): Log in -> Plans (saves plan_id) -> Subscribe (saves subscription_id + checkout_url; open checkout_url in a browser and Pay) -> Check payment (the server asks the gateway) -> Current. Admin > Find subscriptions / Activate by hand = the demo fallback. \"PayMongo webhook (simulated)\" signs a paid event with webhook_secret (must equal PAYMONGO_WEBHOOK_SECRET in .env).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://127.0.0.1:8000/api/v1" },
-    { "key": "lang", "value": "fil" },
-    { "key": "admin_token", "value": "" },
-    { "key": "driver_token", "value": "" },
-    { "key": "document_id", "value": "" },
-    { "key": "file_id", "value": "" },
-    { "key": "driver_id", "value": "" }
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1"
+    },
+    {
+      "key": "lang",
+      "value": "fil"
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "driver_token",
+      "value": ""
+    },
+    {
+      "key": "document_id",
+      "value": ""
+    },
+    {
+      "key": "file_id",
+      "value": ""
+    },
+    {
+      "key": "driver_id",
+      "value": ""
+    },
+    {
+      "key": "plan_id",
+      "value": ""
+    },
+    {
+      "key": "subscription_id",
+      "value": ""
+    },
+    {
+      "key": "checkout_id",
+      "value": ""
+    },
+    {
+      "key": "checkout_url",
+      "value": ""
+    },
+    {
+      "key": "webhook_secret",
+      "value": "whsk_local_test"
+    },
+    {
+      "key": "amount_centavos",
+      "value": "19900"
+    }
   ],
   "item": [
     {
       "name": "Admin",
-      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{admin_token}}",
+            "type": "string"
+          }
+        ]
+      },
       "item": [
         {
           "name": "1. Log in (admin@example.test)",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "const body = pm.response.json();",
-            "pm.test('logged in', () => pm.expect(pm.response.code).to.eql(200));",
-            "if (body.token) { pm.collectionVariables.set('admin_token', body.token); }"
-          ] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('logged in', () => pm.expect(pm.response.code).to.eql(200));",
+                  "if (body.token) { pm.collectionVariables.set('admin_token', body.token); }"
+                ]
+              }
+            }
+          ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"login\": \"admin@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"admin@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": "{{base_url}}/auth/login"
           }
         },
         {
           "name": "2. Review queue (drivers with documents to review)",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "const first = pm.response.json().data?.[0];",
-            "if (first) {",
-            "  pm.collectionVariables.set('driver_id', first.driver_id);",
-            "  if (first.documents_to_review?.length) { pm.collectionVariables.set('document_id', first.documents_to_review[0].id); }",
-            "}"
-          ] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const first = pm.response.json().data?.[0];",
+                  "if (first) {",
+                  "  pm.collectionVariables.set('driver_id', first.driver_id);",
+                  "  if (first.documents_to_review?.length) { pm.collectionVariables.set('document_id', first.documents_to_review[0].id); }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "url": { "raw": "{{base_url}}/admin/driver-verifications?status=to_review", "host": ["{{base_url}}"], "path": ["admin", "driver-verifications"], "query": [{ "key": "status", "value": "to_review", "description": "to_review | pending_verification | under_review | verified | rejected | expired" }] }
+            "url": {
+              "raw": "{{base_url}}/admin/driver-verifications?status=to_review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "driver-verifications"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "to_review",
+                  "description": "to_review | pending_verification | under_review | verified | rejected | expired"
+                }
+              ]
+            }
           }
         },
         {
           "name": "3. Document detail",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "const file = pm.response.json().data?.files?.[0];",
-            "if (file) { pm.collectionVariables.set('file_id', file.id); }"
-          ] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const file = pm.response.json().data?.files?.[0];",
+                  "if (file) { pm.collectionVariables.set('file_id', file.id); }"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": "{{base_url}}/admin/driver-documents/{{document_id}}"
           }
@@ -82,10 +204,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"expires_at\": null\n}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_at\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": "{{base_url}}/admin/driver-documents/{{document_id}}/approve",
             "description": "Optional: \"expires_at\": \"2027-06-30\" to correct the date read on the photo."
           }
@@ -95,10 +231,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Malabo ang litrato\"\n}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Malabo ang litrato\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": "{{base_url}}/admin/driver-documents/{{document_id}}/reject",
             "description": "Quick reasons (brief § 8): Malabo ang litrato · Expired na · Hindi tugma ang pangalan · Kulang ang pahina · Hindi tugma ang plate number"
           }
@@ -108,10 +258,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Kulang ang likod ng license\"\n}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Kulang ang likod ng license\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": "{{base_url}}/admin/driver-documents/{{document_id}}/request-resubmission"
           }
         },
@@ -120,10 +284,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Reklamo ng pasahero\"\n}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Reklamo ng pasahero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": "{{base_url}}/admin/drivers/{{driver_id}}/suspend"
           }
         },
@@ -132,32 +310,128 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": "{{base_url}}/admin/drivers/{{driver_id}}/reactivate"
+          }
+        },
+        {
+          "name": "10. Find subscriptions (pending)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('ok', () => pm.expect(pm.response.code).to.eql(200));",
+                  "if (body.data && body.data.length) { pm.collectionVariables.set('subscription_id', body.data[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/admin/subscriptions?state=pending"
+          }
+        },
+        {
+          "name": "11. Activate subscription by hand (reason required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Paid in person during the demo; PayMongo unreachable\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/admin/subscriptions/{{subscription_id}}/activate",
+            "description": "Demo fallback (phase-0 F.2 guarantee #6). Written to audit_logs with the admin and the reason."
           }
         }
       ]
     },
     {
       "name": "Driver (test uploads without the phone)",
-      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driver_token}}", "type": "string" }] },
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{driver_token}}",
+            "type": "string"
+          }
+        ]
+      },
       "item": [
         {
           "name": "1. Log in (driver2@example.test)",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "const body = pm.response.json();",
-            "if (body.token) { pm.collectionVariables.set('driver_token', body.token); }"
-          ] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('driver_token', body.token); }"
+                ]
+              }
+            }
+          ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"login\": \"driver2@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"driver2@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": "{{base_url}}/auth/login"
           }
         },
@@ -166,8 +440,14 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "url": "{{base_url}}/drivers/me/requirements"
           }
@@ -177,21 +457,377 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Accept-Language", "value": "{{lang}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "requirement_id", "value": "4", "type": "text", "description": "4 = clearance in the seeded order (see GET /driver-requirements)" },
-                { "key": "files[]", "type": "file", "src": [], "description": "Pick a JPG, PNG or PDF (max 5 MB)" },
-                { "key": "expires_at", "value": "2027-12-31", "type": "text" }
+                {
+                  "key": "requirement_id",
+                  "value": "4",
+                  "type": "text",
+                  "description": "4 = clearance in the seeded order (see GET /driver-requirements)"
+                },
+                {
+                  "key": "files[]",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pick a JPG, PNG or PDF (max 5 MB)"
+                },
+                {
+                  "key": "expires_at",
+                  "value": "2027-12-31",
+                  "type": "text"
+                }
               ]
             },
             "url": "{{base_url}}/drivers/me/documents"
           }
         }
       ]
+    },
+    {
+      "name": "Subscriptions (Phase 8, as driver2)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{driver_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "1. Log in (driver2@example.test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('driver_token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"driver2@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "2. Plans (for my role)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.length) {",
+                  "  pm.collectionVariables.set('plan_id', body.data[0].id);",
+                  "  pm.collectionVariables.set('amount_centavos', Math.round(parseFloat(body.data[0].price) * 100));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/subscription-plans"
+          }
+        },
+        {
+          "name": "3. Subscribe (creates the checkout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('created', () => pm.expect(pm.response.code).to.eql(201));",
+                  "if (body.data) {",
+                  "  pm.collectionVariables.set('subscription_id', body.data.subscription.id);",
+                  "  pm.collectionVariables.set('checkout_url', body.data.checkout_url);",
+                  "  const m = body.data.checkout_url.match(/(fake_)?cs_[A-Za-z0-9]+/);",
+                  "  if (m) { pm.collectionVariables.set('checkout_id', m[0]); }",
+                  "  console.log('Pay here: ' + body.data.checkout_url);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"{{plan_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/subscriptions",
+            "description": "Open the saved checkout_url in a browser and pay (fake gateway: our test page; PayMongo test keys: the PayMongo page with test GCash/card)."
+          }
+        },
+        {
+          "name": "4. Check payment (server asks the gateway)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/subscriptions/{{subscription_id}}"
+          }
+        },
+        {
+          "name": "5. Current status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/subscriptions/current"
+          }
+        },
+        {
+          "name": "6. Cancel unpaid checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/subscriptions/{{subscription_id}}/cancel"
+          }
+        },
+        {
+          "name": "7. History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/subscriptions"
+          }
+        },
+        {
+          "name": "8. Payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/subscription-transactions"
+          }
+        },
+        {
+          "name": "9. Go-online checklist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/drivers/me/eligibility"
+          }
+        },
+        {
+          "name": "10. Go online (refused without subscription)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_online\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/drivers/me/availability"
+          }
+        },
+        {
+          "name": "11. Go offline",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_online\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/drivers/me/availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PayMongo webhook (simulated, signed)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const eventId = 'evt_postman_' + pm.collectionVariables.get('subscription_id');",
+              "const payment = { id: \"pay_\" + eventId, type: \"payment\", attributes: { status: \"paid\", amount: Number(pm.collectionVariables.get(\"amount_centavos\")), source: { type: \"gcash\" } } };",
+              "const checkout = { id: pm.collectionVariables.get(\"checkout_id\"), type: \"checkout_session\", attributes: { payment_method_used: \"gcash\", payments: [payment] } };",
+              "const body = JSON.stringify({ data: { id: eventId, type: \"event\", attributes: { type: \"checkout_session.payment.paid\", livemode: false, data: checkout } } });",
+              "const t = Math.floor(Date.now() / 1000);",
+              "const sig = CryptoJS.HmacSHA256(t + '.' + body, pm.collectionVariables.get('webhook_secret')).toString(CryptoJS.enc.Hex);",
+              "pm.variables.set('webhook_body', body);",
+              "pm.request.headers.upsert({ key: 'Paymongo-Signature', value: 't=' + t + ',te=' + sig });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept-Language",
+            "value": "{{lang}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{{webhook_body}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/webhooks/paymongo",
+        "description": "Plays PayMongo: a checkout_session.payment.paid event for {{checkout_id}}, signed like PayMongo (HMAC-SHA256 of \"t.body\" with webhook_secret). Set PAYMONGO_WEBHOOK_SECRET in .env to the same value. Send it twice: the second answer is \"duplicate\" (idempotency). Change amount_centavos to see the amount check refuse it."
+      }
     }
   ]
 }

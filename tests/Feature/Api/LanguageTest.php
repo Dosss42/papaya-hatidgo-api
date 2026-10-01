@@ -67,6 +67,10 @@ class LanguageTest extends TestCase
             $this->assertEqualsCanonicalizing(array_keys($lines), array_keys($en[$code]), "requirements.$code differs");
         }
 
+        $en = require lang_path('en/plans.php'); // Phase 8
+        $fil = require lang_path('fil/plans.php');
+        $this->assertEqualsCanonicalizing(array_keys($fil), array_keys($en), 'plans.php codes differ');
+
         $en = require lang_path('en/validation.php');
         $fil = require lang_path('fil/validation.php');
         $this->assertEqualsCanonicalizing(array_keys($fil['attributes']), array_keys($en['attributes']), 'attributes differ');

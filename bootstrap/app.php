@@ -15,8 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // role:driver / role:admin on routes (Phase 7). See App\Http\Middleware\EnsureRole.
+        // `subscribed`: an active subscription is required (Phase 8). See App\Http\Middleware\EnsureSubscribed.
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
         ]);
 
         // Every API request answers in the app's language (Accept-Language: en | fil). Prepended,

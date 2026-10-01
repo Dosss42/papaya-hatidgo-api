@@ -47,4 +47,21 @@ return [
     'mail_reset_valid' => "It's valid for :minutes minutes. Enter it in the app together with your new password.",
     'mail_reset_ignore' => "If you didn't ask for this, ignore this email. Nothing will change on your account.",
     'mail_reset_warning' => 'Never give this code to anyone, even someone claiming to be from Papaya HatidGo.',
+
+    // Subscriptions and payments (Phase 8)
+    'payment_gateway_error' => "We couldn't reach the payment service. Please try again in a moment.",
+    'plan_not_for_you' => "This plan isn't for your account.",
+    'plan_inactive' => "This plan isn't available anymore.",
+    'already_renewed' => "You've already renewed. Your next period starts on :date.",
+    'subscription_not_pending' => "This payment can't be cancelled anymore.",
+    'subscription_not_activatable' => 'Only an unpaid subscription can be activated by hand.',
+    'subscription_inactive' => 'You need an active subscription for this.',
+    'not_eligible' => "You can't go online yet. Check the list on Home.",
+
+    // Payment return page (opened by PayMongo after paying or cancelling)
+    'return_success_title' => 'Thank you! Go back to the app.',
+    'return_success_body' => 'The app will confirm your payment.',
+    'return_cancel_title' => 'Payment cancelled',
+    'return_cancel_body' => 'Nothing was charged. You can try again in the app.',
+    'return_button' => 'Back to Papaya HatidGo',
 ];

@@ -38,4 +38,10 @@ final class BusinessDate
     {
         return (int) self::today()->diffInDays(CarbonImmutable::parse($date->toDateString()), false);
     }
+
+    /** A moment (stored in UTC) as the date people see in the Philippines, e.g. "Nov 1, 2026" (Phase 8 messages). */
+    public static function format(CarbonInterface $moment): string
+    {
+        return CarbonImmutable::instance($moment)->setTimezone(config('app.business_timezone'))->format('M j, Y');
+    }
 }

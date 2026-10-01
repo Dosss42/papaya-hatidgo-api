@@ -48,4 +48,21 @@ return [
     'mail_reset_valid' => 'Valid ito sa loob ng :minutes minuto. Ilagay ito sa app kasama ang bago mong password.',
     'mail_reset_ignore' => 'Kung hindi ikaw ang humingi nito, huwag pansinin ang email na ito. Walang magbabago sa account mo.',
     'mail_reset_warning' => 'Huwag ibigay ang code na ito kahit kanino, kahit sa nagpapakilalang taga-Papaya HatidGo.',
+
+    // Subscriptions at bayad (Phase 8)
+    'payment_gateway_error' => 'Hindi maabot ang payment service. Subukan ulit maya-maya.',
+    'plan_not_for_you' => 'Hindi para sa account mo ang plan na ito.',
+    'plan_inactive' => 'Hindi na available ang plan na ito.',
+    'already_renewed' => 'Na-renew mo na. Magsisimula ang susunod mong period sa :date.',
+    'subscription_not_pending' => 'Hindi na puwedeng i-cancel ang bayad na ito.',
+    'subscription_not_activatable' => 'Ang hindi pa bayad na subscription lang ang puwedeng i-activate nang mano-mano.',
+    'subscription_inactive' => 'Kailangan mo ng active na subscription para dito.',
+    'not_eligible' => 'Hindi ka pa puwedeng mag-online. Tingnan ang listahan sa Home.',
+
+    // Payment return page (binubuksan ng PayMongo pagkatapos magbayad o mag-cancel)
+    'return_success_title' => 'Salamat! Bumalik na sa app.',
+    'return_success_body' => 'Kukumpirmahin ng app ang bayad mo.',
+    'return_cancel_title' => 'Na-cancel ang bayad',
+    'return_cancel_body' => 'Walang nabawas. Puwede kang sumubok ulit sa app.',
+    'return_button' => 'Bumalik sa Papaya HatidGo',
 ];
