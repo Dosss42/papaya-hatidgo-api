@@ -84,5 +84,10 @@ class AppServiceProvider extends ServiceProvider
         // 5 code guesses per 15 minutes per email (a 6-digit code can't be brute-forced).
         RateLimiter::for('reset-password', fn (Request $request) => Limit::perMinutes(15, 5)
             ->by(Str::lower((string) $request->input('email'))));
+
+        // 10 document uploads per 10 minutes per driver (Phase 7): plenty for 4 papers and a few
+        // retakes, but a broken or malicious client can't fill the disk.
+        RateLimiter::for('uploads', fn (Request $request) => Limit::perMinutes(10, 10)
+            ->by((string) $request->user()?->id));
     }
 }

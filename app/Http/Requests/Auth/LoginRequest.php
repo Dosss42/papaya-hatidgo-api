@@ -21,11 +21,5 @@ class LoginRequest extends FormRequest
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'login.required' => 'Ilagay ang email o mobile number mo.',
-            'password.required' => 'Ilagay ang password mo.',
-        ];
-    }
+    // Messages: lang/{fil,en}/validation.php ('custom' + 'attributes'), in the request's language.
 }

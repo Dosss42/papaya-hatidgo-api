@@ -14,7 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // role:driver / role:admin on routes (Phase 7). See App\Http\Middleware\EnsureRole.
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureRole::class,
+        ]);
+
+        // Every API request answers in the app's language (Accept-Language: en | fil). Prepended,
+        // so validation and error messages later in the request already use it.
+        $middleware->api(prepend: [
+            \App\Http\Middleware\SetLocaleFromRequest::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

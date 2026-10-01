@@ -18,7 +18,7 @@ class PasswordResetController extends Controller
         $this->resets->sendCode($request->validated('email'));
 
         return response()->json([
-            'message' => 'Kung may account ang email na ito, nagpadala kami ng 6-digit code. Valid ito nang 15 minuto.',
+            'message' => __('api.reset_code_sent', ['minutes' => PasswordResetService::CODE_LIFETIME_MINUTES]),
         ]);
     }
 
@@ -31,6 +31,6 @@ class PasswordResetController extends Controller
             $request->validated('password'),
         );
 
-        return response()->json(['message' => 'Napalitan na ang password mo. Mag-login ulit.']);
+        return response()->json(['message' => __('api.password_changed')]);
     }
 }

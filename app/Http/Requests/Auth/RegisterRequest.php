@@ -43,15 +43,5 @@ class RegisterRequest extends FormRequest
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'email.unique' => 'May account na gamit ang email na ito.',
-            'email.email' => 'Hindi valid ang email.',
-            'phone.regex' => 'Gamitin ang PH mobile number (hal. 09171234567).',
-            'phone.unique' => 'May account na gamit ang numerong ito.',
-            'password.confirmed' => 'Hindi magkapareho ang password.',
-            'role.in' => 'Pumili: Pasahero o Driver.',
-        ];
-    }
+    // Messages: lang/{fil,en}/validation.php ('custom' + 'attributes'), in the request's language.
 }

@@ -30,12 +30,5 @@ class ResetPasswordRequest extends FormRequest
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'code.required' => 'Ilagay ang 6-digit code.',
-            'code.digits' => 'Ang code ay 6 na numero.',
-            'password.confirmed' => 'Hindi magkapareho ang password.',
-        ];
-    }
+    // Messages: lang/{fil,en}/validation.php ('custom' + 'attributes'), in the request's language.
 }

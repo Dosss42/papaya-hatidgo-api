@@ -78,12 +78,12 @@ class AuthService
         $passwordOk = Hash::check($password, $user?->password ?? self::TIMING_DUMMY_HASH);
 
         if (! $user || ! $passwordOk) {
-            throw new ApiException('Mali ang email/mobile number o password.', 'INVALID_CREDENTIALS', 422);
+            throw new ApiException(__('api.invalid_credentials'), 'INVALID_CREDENTIALS', 422);
         }
 
         if ($user->account_status === AccountStatus::Suspended) {
             throw new ApiException(
-                'Suspended ang account mo. Makipag-ugnayan sa admin ng Papaya HatidGo.',
+                __('api.account_suspended'),
                 'ACCOUNT_SUSPENDED',
                 403,
             );

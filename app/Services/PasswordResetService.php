@@ -63,10 +63,10 @@ class PasswordResetService
 
         if (! $user) {
             throw new ApiException(
-                'Mali o expired na ang code. Humingi ng bagong code.',
+                __('api.invalid_code'),
                 'INVALID_OR_EXPIRED_CODE',
                 422,
-                ['code' => ['Mali o expired na ang code.']],
+                ['code' => [__('api.invalid_code_field')]],
             );
         }
 

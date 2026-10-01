@@ -32,6 +32,59 @@ return [
         'uncompromised' => 'Na-leak na online ang :attribute na ito. Pumili ng iba.',
     ],
 
+    // Per-field messages (were hard-coded in each FormRequest's messages() until Phase 7).
+    // Keep in sync with lang/en/validation.php.
+    'custom' => [
+        'email' => [
+            'required' => 'Ilagay ang email mo.',
+            'email' => 'Hindi valid ang email.',
+            'unique' => 'May account na gamit ang email na ito.',
+        ],
+        'phone' => [
+            'regex' => 'Gamitin ang PH mobile number (hal. 09171234567).',
+            'unique' => 'May account na gamit ang numerong ito.',
+        ],
+        'password' => [
+            'required' => 'Ilagay ang password mo.',
+            'confirmed' => 'Hindi magkapareho ang password.',
+        ],
+        'login' => [
+            'required' => 'Ilagay ang email o mobile number mo.',
+        ],
+        'role' => [
+            'in' => 'Pumili: Pasahero o Driver.',
+        ],
+        'code' => [
+            'required' => 'Ilagay ang 6-digit code.',
+            'digits' => 'Ang code ay 6 na numero.',
+        ],
+        'plate_number' => [
+            'required' => 'Ilagay ang plate number.',
+            'regex' => 'Tingnan ulit ang plate number (letra at numero, hal. ABC 1234).',
+            'unique' => 'May nakarehistro nang tricycle na may plate number na ito.',
+        ],
+        'files' => [
+            'required' => 'Mag-upload ng litrato o PDF.',
+            'max' => 'Hanggang 2 file lang.',
+        ],
+        'files.*' => [
+            'mimes' => 'JPG, PNG, o PDF lang ang tinatanggap.',
+            'max' => 'Hanggang 5 MB lang bawat file.',
+            'uploaded' => 'Hindi na-upload ang file. Baka masyadong malaki (hanggang 5 MB).',
+        ],
+        'expires_at' => [
+            'required' => 'Ilagay ang expiry date.',
+            'after' => 'Dapat hindi pa lumilipas ang expiry date.',
+        ],
+        'reason' => [
+            'required' => 'Ilagay ang dahilan. Babasahin ito ng driver.',
+            'min' => 'Masyadong maikli ang dahilan.',
+        ],
+        'body_number' => [
+            'unique' => 'May tricycle nang gamit ang body number na ito.',
+        ],
+    ],
+
     // Field names as the user sees them in the app (replaces :attribute).
     'attributes' => [
         'first_name' => 'pangalan',
@@ -44,5 +97,16 @@ return [
         'login' => 'email o mobile number',
         'code' => 'code',
         'device_name' => 'pangalan ng device',
+        'plate_number' => 'plate number',
+        'body_number' => 'body number',
+        'color' => 'kulay',
+        'make' => 'brand',
+        'model' => 'model',
+        'requirement_id' => 'requirement',
+        'reason' => 'dahilan',
+        'files' => 'mga file',
+        'expires_at' => 'expiry date',
+        'issued_at' => 'petsa ng pagkakaissue',
+        'document_number' => 'numero ng dokumento',
     ],
 ];

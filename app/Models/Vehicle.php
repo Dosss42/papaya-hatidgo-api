@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** A tricycle. status is set only by the admin review (not fillable). */
+/**
+ * A tricycle. status is not fillable: DriverComplianceService sets pending/verified automatically
+ * from its papers (Phase 7 decision #1); only an admin sets rejected/inactive.
+ */
 #[Fillable(['plate_number', 'body_number', 'make', 'model', 'color'])]
 class Vehicle extends Model
 {

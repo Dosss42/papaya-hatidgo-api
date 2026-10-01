@@ -1,0 +1,197 @@
+{
+  "info": {
+    "name": "Papaya HatidGo API (Phase 7: driver verification)",
+    "description": "Play ADMIN until the admin web exists (Phase 14).\n\nOrder: 1) Admin › Log in (saves the token) → 2) Admin › Review queue (saves the first document_id and driver_id) → 3) Admin › Document detail (saves file_id) → View file / Approve / Reject / Request resubmission.\n\nThe Driver folder lets you upload a test document without the phone (log in as driver2@example.test, then pick any JPG/PNG/PDF in the 'files[]' field).\n\nNeeds: php artisan serve running, MySQL (WAMP) green, seeded accounts (password: password). Language: set the collection variable 'lang' to en or fil.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api/v1" },
+    { "key": "lang", "value": "fil" },
+    { "key": "admin_token", "value": "" },
+    { "key": "driver_token", "value": "" },
+    { "key": "document_id", "value": "" },
+    { "key": "file_id", "value": "" },
+    { "key": "driver_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Admin",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+      "item": [
+        {
+          "name": "1. Log in (admin@example.test)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const body = pm.response.json();",
+            "pm.test('logged in', () => pm.expect(pm.response.code).to.eql(200));",
+            "if (body.token) { pm.collectionVariables.set('admin_token', body.token); }"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"login\": \"admin@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "2. Review queue (drivers with documents to review)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const first = pm.response.json().data?.[0];",
+            "if (first) {",
+            "  pm.collectionVariables.set('driver_id', first.driver_id);",
+            "  if (first.documents_to_review?.length) { pm.collectionVariables.set('document_id', first.documents_to_review[0].id); }",
+            "}"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": { "raw": "{{base_url}}/admin/driver-verifications?status=to_review", "host": ["{{base_url}}"], "path": ["admin", "driver-verifications"], "query": [{ "key": "status", "value": "to_review", "description": "to_review | pending_verification | under_review | verified | rejected | expired" }] }
+          }
+        },
+        {
+          "name": "3. Document detail",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const file = pm.response.json().data?.files?.[0];",
+            "if (file) { pm.collectionVariables.set('file_id', file.id); }"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": "{{base_url}}/admin/driver-documents/{{document_id}}"
+          }
+        },
+        {
+          "name": "4. View file (photo/PDF)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/admin/driver-documents/{{document_id}}/files/{{file_id}}"
+          }
+        },
+        {
+          "name": "5. Approve",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"expires_at\": null\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/admin/driver-documents/{{document_id}}/approve",
+            "description": "Optional: \"expires_at\": \"2027-06-30\" to correct the date read on the photo."
+          }
+        },
+        {
+          "name": "6. Reject (reason required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Malabo ang litrato\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/admin/driver-documents/{{document_id}}/reject",
+            "description": "Quick reasons (brief § 8): Malabo ang litrato · Expired na · Hindi tugma ang pangalan · Kulang ang pahina · Hindi tugma ang plate number"
+          }
+        },
+        {
+          "name": "7. Request resubmission (reason required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Kulang ang likod ng license\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/admin/driver-documents/{{document_id}}/request-resubmission"
+          }
+        },
+        {
+          "name": "8. Suspend driver (reason required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Reklamo ng pasahero\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/admin/drivers/{{driver_id}}/suspend"
+          }
+        },
+        {
+          "name": "9. Reactivate driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": "{{base_url}}/admin/drivers/{{driver_id}}/reactivate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Driver (test uploads without the phone)",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{driver_token}}", "type": "string" }] },
+      "item": [
+        {
+          "name": "1. Log in (driver2@example.test)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const body = pm.response.json();",
+            "if (body.token) { pm.collectionVariables.set('driver_token', body.token); }"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"login\": \"driver2@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "2. My checklist",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "url": "{{base_url}}/drivers/me/requirements"
+          }
+        },
+        {
+          "name": "3. Upload clearance (pick a file)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Accept-Language", "value": "{{lang}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "requirement_id", "value": "4", "type": "text", "description": "4 = clearance in the seeded order (see GET /driver-requirements)" },
+                { "key": "files[]", "type": "file", "src": [], "description": "Pick a JPG, PNG or PDF (max 5 MB)" },
+                { "key": "expires_at", "value": "2027-12-31", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/drivers/me/documents"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -33,7 +33,10 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Off on purpose (Phase 7): driver ID documents live here and must be reachable ONLY
+            // through the admin endpoint that checks the role and streams the file, never through
+            // Laravel's built-in /storage route (signed temporary links).
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

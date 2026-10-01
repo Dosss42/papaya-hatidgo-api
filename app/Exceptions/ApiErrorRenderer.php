@@ -31,28 +31,28 @@ class ApiErrorRenderer
             $e instanceof ApiException => [$e->status, $e->errorCode, $e->getMessage(), $e->errors, []],
 
             $e instanceof ValidationException => [
-                422, 'VALIDATION_FAILED', 'May mali sa inilagay mo. Pakitingnan ang mga field.', $e->errors(), [],
+                422, 'VALIDATION_FAILED', __('api.validation_failed'), $e->errors(), [],
             ],
 
             $e instanceof AuthenticationException => [401, 'UNAUTHENTICATED', 'Kailangan mong mag-login ulit.', [], []],
 
             $e instanceof AuthorizationException,
-            $e instanceof AccessDeniedHttpException => [403, 'FORBIDDEN', 'Hindi ka pinapayagang gawin ito.', [], []],
+            $e instanceof AccessDeniedHttpException => [403, 'FORBIDDEN', __('api.forbidden'), [], []],
 
             $e instanceof ModelNotFoundException,
-            $e instanceof NotFoundHttpException => [404, 'NOT_FOUND', 'Hindi nahanap ang hinahanap mo.', [], []],
+            $e instanceof NotFoundHttpException => [404, 'NOT_FOUND', __('api.not_found'), [], []],
 
             $e instanceof ThrottleRequestsException => [
-                429, 'TOO_MANY_ATTEMPTS', 'Masyadong maraming subok. Maghintay muna bago umulit.', [], $e->getHeaders(),
+                429, 'TOO_MANY_ATTEMPTS', __('api.too_many_attempts'), [], $e->getHeaders(),
             ],
 
-            $e instanceof MethodNotAllowedHttpException => [405, 'METHOD_NOT_ALLOWED', 'Hindi suportado ang request na ito.', [], []],
+            $e instanceof MethodNotAllowedHttpException => [405, 'METHOD_NOT_ALLOWED', __('api.method_not_allowed'), [], []],
 
             $e instanceof HttpExceptionInterface => [
-                $e->getStatusCode(), 'HTTP_ERROR', 'May problema sa request.', [], $e->getHeaders(),
+                $e->getStatusCode(), 'HTTP_ERROR', __('api.http_error'), [], $e->getHeaders(),
             ],
 
-            default => [500, 'SERVER_ERROR', 'May problema sa server. Subukan ulit mamaya.', [], []],
+            default => [500, 'SERVER_ERROR', __('api.server_error'), [], []],
         };
 
         $body = ['message' => $message, 'code' => $code];

@@ -25,11 +25,5 @@ class ForgotPasswordRequest extends FormRequest
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'email.required' => 'Ilagay ang email mo.',
-            'email.email' => 'Hindi valid ang email.',
-        ];
-    }
+    // Messages: lang/{fil,en}/validation.php ('custom' + 'attributes'), in the request's language.
 }

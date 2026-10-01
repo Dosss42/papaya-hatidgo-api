@@ -68,6 +68,15 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Business timezone (Phase 7): the calendar that DATES are judged by. Timestamps stay UTC
+    | (above, and the MySQL session), but "this license expires on 2026-10-01" means valid
+    | through October 1 in the Philippines. With UTC, "today" would change at 8:00 AM Manila
+    | time and an expired document would count as valid for 8 extra hours.
+    | Used through App\Support\BusinessDate, never directly.
+    */
+    'business_timezone' => env('BUSINESS_TIMEZONE', 'Asia/Manila'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

@@ -6,6 +6,7 @@ use App\Enums\RequirementScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Lang;
 
 /** A requirement drivers must submit (admin-configured). */
 #[Fillable([
@@ -28,5 +29,20 @@ class DriverRequirement extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(DriverDocument::class);
+    }
+
+    /** The name in the request's language (lang/*\/requirements.php by code), else as the admin typed it. */
+    public function displayName(): string
+    {
+        $key = "requirements.{$this->code}.name";
+
+        return Lang::has($key) ? __($key) : $this->name;
+    }
+
+    public function displayDescription(): ?string
+    {
+        $key = "requirements.{$this->code}.description";
+
+        return Lang::has($key) ? __($key) : $this->description;
     }
 }

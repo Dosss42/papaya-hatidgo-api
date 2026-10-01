@@ -18,7 +18,7 @@ class PasswordResetCodeMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Papaya HatidGo: ang code mo para sa bagong password');
+        return new Envelope(subject: __('api.mail_reset_subject'));
     }
 
     public function content(): Content
