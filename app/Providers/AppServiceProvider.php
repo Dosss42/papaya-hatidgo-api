@@ -120,5 +120,13 @@ class AppServiceProvider extends ServiceProvider
         // a plan several times, not enough to flood PayMongo with checkout sessions from one account.
         RateLimiter::for('checkout', fn (Request $request) => Limit::perMinutes(10, 10)
             ->by((string) $request->user()?->id));
+
+        // Rides (Phase 9, § K "rate limiting: location updates, fare estimate"):
+        // - 30 estimates a minute: moving the pins re-estimates, a script can't hammer the fares;
+        // - 10 bookings a minute: a retry or two after "fare changed", never a flood of requests;
+        // - 30 location posts a minute: the ride cadence is one per 10 s (6/min), with room for retries.
+        RateLimiter::for('fare-estimate', fn (Request $request) => Limit::perMinute(30)->by((string) $request->user()?->id));
+        RateLimiter::for('book', fn (Request $request) => Limit::perMinute(10)->by((string) $request->user()?->id));
+        RateLimiter::for('locations', fn (Request $request) => Limit::perMinute(30)->by((string) $request->user()?->id));
     }
 }

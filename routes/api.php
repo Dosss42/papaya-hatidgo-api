@@ -3,14 +3,18 @@
 use App\Http\Controllers\Api\V1\Admin\DriverAccountController as AdminDriverAccountController;
 use App\Http\Controllers\Api\V1\Admin\DriverDocumentController as AdminDriverDocumentController;
 use App\Http\Controllers\Api\V1\Admin\DriverVerificationController;
+use App\Http\Controllers\Api\V1\Admin\RideController as AdminRideController;
 use App\Http\Controllers\Api\V1\Admin\SubscriptionController as AdminSubscriptionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DriverAvailabilityController;
 use App\Http\Controllers\Api\V1\DriverDocumentController;
 use App\Http\Controllers\Api\V1\DriverRequirementController;
+use App\Http\Controllers\Api\V1\DriverRideController;
+use App\Http\Controllers\Api\V1\FareController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PayMongoWebhookController;
+use App\Http\Controllers\Api\V1\RideController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +72,44 @@ Route::prefix('v1')->group(function () {
         Route::get('/subscription-transactions', [SubscriptionController::class, 'transactions']);
     });
 
+    // Rides (Phase 9, phase-9-rides.md). {ride} lookups are scoped to the caller's own rides.
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/ride-types', [FareController::class, 'rideTypes']);
+
+        // Every role reads its own rides (passenger: booked · driver: assigned · admin: all).
+        Route::get('/rides/active', [RideController::class, 'active']);
+        Route::get('/rides', [RideController::class, 'index']);
+        Route::get('/rides/{ride}', [RideController::class, 'show'])->whereNumber('ride');
+
+        Route::middleware('role:passenger')->group(function () {
+            Route::post('/fare/estimate', [FareController::class, 'estimate'])->middleware('throttle:fare-estimate');
+            // `subscribed`: the booking gate built in Phase 8 (403 SUBSCRIPTION_INACTIVE).
+            Route::post('/rides', [RideController::class, 'store'])->middleware(['subscribed', 'throttle:book']);
+            Route::post('/rides/{ride}/rating', [RideController::class, 'rate'])->whereNumber('ride');
+            Route::post('/rides/{ride}/passenger-returning', [RideController::class, 'passengerReturning'])->whereNumber('ride');
+        });
+
+        Route::post('/rides/{ride}/cancel', [RideController::class, 'cancel'])->whereNumber('ride')->middleware('role:passenger,driver');
+
+        Route::middleware('role:driver')->group(function () {
+            Route::get('/drivers/me/offers', [DriverRideController::class, 'offers']);
+            Route::post('/drivers/me/location', [DriverRideController::class, 'location'])->middleware('throttle:locations');
+
+            Route::prefix('rides/{ride}')->whereNumber('ride')->controller(DriverRideController::class)->group(function () {
+                Route::post('/accept', 'accept');
+                Route::post('/decline', 'decline');
+                Route::post('/depart', 'depart');
+                Route::post('/arrive', 'arrive');
+                Route::post('/start', 'start');
+                Route::post('/reach-destination', 'reachDestination');
+                Route::post('/start-return', 'startReturn');
+                Route::post('/complete', 'complete');
+                Route::post('/end-at-destination', 'endAtDestination');
+                Route::post('/locations', 'locations')->middleware('throttle:locations');
+            });
+        });
+    });
+
     // Admin: driver verification (step 7.4). Postman until the admin web exists (Phase 14).
     Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::get('/driver-verifications', [DriverVerificationController::class, 'index']);
@@ -86,5 +128,9 @@ Route::prefix('v1')->group(function () {
         // Subscriptions (Phase 8): find a user's subscriptions; the audited manual activation (demo fallback).
         Route::get('/subscriptions', [AdminSubscriptionController::class, 'index']);
         Route::post('/subscriptions/{subscription}/activate', [AdminSubscriptionController::class, 'activate'])->whereNumber('subscription');
+
+        // Rides (Phase 9): watch, and cancel a stuck ride (reason required, audited).
+        Route::get('/rides', [AdminRideController::class, 'index']);
+        Route::post('/rides/{ride}/cancel', [AdminRideController::class, 'cancel'])->whereNumber('ride');
     });
 });

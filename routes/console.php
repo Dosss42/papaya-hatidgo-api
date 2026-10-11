@@ -24,3 +24,9 @@ Schedule::command('documents:expire')
     ->dailyAt('00:05')
     ->timezone(config('app.business_timezone'))
     ->withoutOverlapping();
+
+// Rides (Phase 9): unaccepted requests past their 2 minutes → "no driver" (the passenger's poll
+// also does this; the schedule catches rides nobody is polling), and drivers whose last location
+// is older than 3 minutes → offline (the stale-online rule).
+Schedule::command('rides:expire')->everyMinute()->withoutOverlapping();
+Schedule::command('drivers:offline-stale')->everyMinute()->withoutOverlapping();

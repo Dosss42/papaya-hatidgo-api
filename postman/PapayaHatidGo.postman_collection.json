@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Papaya HatidGo API (Phase 7-8: driver verification + subscriptions)",
-    "description": "Play ADMIN until the admin web exists (Phase 14).\n\nOrder: 1) Admin › Log in (saves the token) → 2) Admin › Review queue (saves the first document_id and driver_id) → 3) Admin › Document detail (saves file_id) → View file / Approve / Reject / Request resubmission.\n\nThe Driver folder lets you upload a test document without the phone (log in as driver2@example.test, then pick any JPG/PNG/PDF in the 'files[]' field).\n\nNeeds: php artisan serve running, MySQL (WAMP) green, seeded accounts (password: password). Language: set the collection variable 'lang' to en or fil.\n\nPhase 8 - Subscriptions folder (as driver2): Log in -> Plans (saves plan_id) -> Subscribe (saves subscription_id + checkout_url; open checkout_url in a browser and Pay) -> Check payment (the server asks the gateway) -> Current. Admin > Find subscriptions / Activate by hand = the demo fallback. \"PayMongo webhook (simulated)\" signs a paid event with webhook_secret (must equal PAYMONGO_WEBHOOK_SECRET in .env).",
+    "name": "Papaya HatidGo API (Phase 7-9: verification, subscriptions, rides)",
+    "description": "Play ADMIN until the admin web exists (Phase 14).\n\nOrder: 1) Admin › Log in (saves the token) → 2) Admin › Review queue (saves the first document_id and driver_id) → 3) Admin › Document detail (saves file_id) → View file / Approve / Reject / Request resubmission.\n\nThe Driver folder lets you upload a test document without the phone (log in as driver2@example.test, then pick any JPG/PNG/PDF in the 'files[]' field).\n\nNeeds: php artisan serve running, MySQL (WAMP) green, seeded accounts (password: password). Language: set the collection variable 'lang' to en or fil.\n\nPhase 8 - Subscriptions folder (as driver2): Log in -> Plans (saves plan_id) -> Subscribe (saves subscription_id + checkout_url; open checkout_url in a browser and Pay) -> Check payment (the server asks the gateway) -> Current. Admin > Find subscriptions / Activate by hand = the demo fallback. \"PayMongo webhook (simulated)\" signs a paid event with webhook_secret (must equal PAYMONGO_WEBHOOK_SECRET in .env).\n\nPhase 9 - Rides: 1) Rides › Driver: Log in (Juan) → Go online. 2) Rides › Passenger: Log in (Maria) → Estimate (saves expected_total) → Book (saves ride_id). 3) Driver: My offers → Accept → Depart → Arrive → Start → Complete. 4) Passenger: Ride status → Rate. Try the wrong order (e.g. Complete before Start) to see 409 INVALID_TRANSITION.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -56,6 +56,18 @@
     {
       "key": "amount_centavos",
       "value": "19900"
+    },
+    {
+      "key": "passenger_token",
+      "value": ""
+    },
+    {
+      "key": "ride_id",
+      "value": ""
+    },
+    {
+      "key": "expected_total",
+      "value": ""
     }
   ],
   "item": [
@@ -377,6 +389,49 @@
             },
             "url": "{{base_url}}/admin/subscriptions/{{subscription_id}}/activate",
             "description": "Demo fallback (phase-0 F.2 guarantee #6). Written to audit_logs with the admin and the reason."
+          }
+        },
+        {
+          "name": "12. Rides (filter by status)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/admin/rides?status=in_progress"
+          }
+        },
+        {
+          "name": "13. Cancel a stuck ride (reason, audited)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Hindi na makakatuloy ang driver\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/admin/rides/{{ride_id}}/cancel"
           }
         }
       ]
@@ -828,6 +883,654 @@
         "url": "{{base_url}}/webhooks/paymongo",
         "description": "Plays PayMongo: a checkout_session.payment.paid event for {{checkout_id}}, signed like PayMongo (HMAC-SHA256 of \"t.body\" with webhook_secret). Set PAYMONGO_WEBHOOK_SECRET in .env to the same value. Send it twice: the second answer is \"duplicate\" (idempotency). Change amount_centavos to see the amount check refuse it."
       }
+    },
+    {
+      "name": "Rides › Passenger (Phase 9, Maria)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{passenger_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "1. Log in (pasahero1@example.test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('passenger_token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"pasahero1@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "2. Ride types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/ride-types"
+          }
+        },
+        {
+          "name": "3. Fare estimate (both types)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data) { pm.collectionVariables.set('expected_total', body.data.options[0].total); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_lat\": 15.35,\n  \"pickup_lng\": 121.05,\n  \"pickup_landmark\": \"Harap ng munisipyo\",\n  \"destination_lat\": 15.37,\n  \"destination_lng\": 121.05,\n  \"destination_landmark\": \"Palengke\",\n  \"wait_minutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/fare/estimate"
+          }
+        },
+        {
+          "name": "4. Book one-way",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('created', () => pm.expect(pm.response.code).to.eql(201));",
+                  "if (body.data) { pm.collectionVariables.set('ride_id', body.data.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_lat\": 15.35,\n  \"pickup_lng\": 121.05,\n  \"pickup_landmark\": \"Harap ng munisipyo\",\n  \"destination_lat\": 15.37,\n  \"destination_lng\": 121.05,\n  \"destination_landmark\": \"Palengke\",\n  \"ride_type\": \"one_way\",\n  \"expected_total\": \"{{expected_total}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/rides",
+            "description": "The server recomputes the fare. A different expected_total → 409 FARE_CHANGED with the new estimate."
+          }
+        },
+        {
+          "name": "5. Ride status (the poll target)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}"
+          }
+        },
+        {
+          "name": "6. My active ride",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/active"
+          }
+        },
+        {
+          "name": "7. Cancel (reason optional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Nagbago ang plano\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/rides/{{ride_id}}/cancel"
+          }
+        },
+        {
+          "name": "8. Pabalik na ako (Balikan, waiting leg)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/passenger-returning"
+          }
+        },
+        {
+          "name": "9. Rate (after completion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 5,\n  \"comment\": \"Salamat po!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/rides/{{ride_id}}/rating"
+          }
+        },
+        {
+          "name": "10. History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rides › Driver (Phase 9, Juan)",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{driver_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "1. Log in (driver1@example.test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('driver_token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"driver1@example.test\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "2. Go online with my position",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_online\": true,\n  \"lat\": 15.351,\n  \"lng\": 121.05\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/drivers/me/availability"
+          }
+        },
+        {
+          "name": "3. Location ping (every 60 s while idle)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 15.351,\n  \"lng\": 121.05\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/drivers/me/location"
+          }
+        },
+        {
+          "name": "4. My offers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.length) { pm.collectionVariables.set('ride_id', body.data[0].ride_id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/drivers/me/offers"
+          }
+        },
+        {
+          "name": "5. accept",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/accept"
+          }
+        },
+        {
+          "name": "6. decline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/decline"
+          }
+        },
+        {
+          "name": "7. depart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/depart"
+          }
+        },
+        {
+          "name": "8. arrive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/arrive"
+          }
+        },
+        {
+          "name": "9. start",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/start"
+          }
+        },
+        {
+          "name": "10. reach-destination",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/reach-destination"
+          }
+        },
+        {
+          "name": "11. start-return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/start-return"
+          }
+        },
+        {
+          "name": "12. complete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "url": "{{base_url}}/rides/{{ride_id}}/complete"
+          }
+        },
+        {
+          "name": "13. End at destination (Balikan, reason required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Hindi na bumalik ang pasahero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/rides/{{ride_id}}/end-at-destination"
+          }
+        },
+        {
+          "name": "14. Cancel (reason required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Nasiraan ng gulong\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/rides/{{ride_id}}/cancel"
+          }
+        },
+        {
+          "name": "15. Route trail point",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"points\": [\n    {\n      \"lat\": 15.3505,\n      \"lng\": 121.05,\n      \"accuracy_m\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/rides/{{ride_id}}/locations"
+          }
+        },
+        {
+          "name": "16. Go offline",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "{{lang}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_online\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/drivers/me/availability"
+          }
+        }
+      ]
     }
   ]
 }

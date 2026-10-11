@@ -55,9 +55,26 @@ class RideRequest extends Model
             'started_at' => 'datetime',
             'destination_reached_at' => 'datetime',
             'return_started_at' => 'datetime',
+            'passenger_returning_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    /** Requested … in progress: the ride isn't over yet (matches the active_*_key columns, N16). */
+    public const ACTIVE_STATUSES = [
+        RideStatus::Requested, RideStatus::Accepted, RideStatus::DriverArriving, RideStatus::Arrived, RideStatus::InProgress,
+    ];
+
+    public function isActive(): bool
+    {
+        return in_array($this->status, self::ACTIVE_STATUSES, true);
+    }
+
+    /** Matched and not over: the window in which the pair may see each other's phone number (§ K). */
+    public function isMatchedAndActive(): bool
+    {
+        return $this->driver_id !== null && $this->isActive();
     }
 
     /** "HG-000123": derived from the id, never stored (N14). */

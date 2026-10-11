@@ -28,7 +28,14 @@ class DriverAvailabilityController extends Controller
 
     public function update(Request $request): JsonResponse
     {
-        $wantsOnline = $request->validate(['is_online' => ['required', 'boolean']])['is_online'];
+        $data = $request->validate([
+            'is_online' => ['required', 'boolean'],
+            // Phase 9: going online with the current position, so matching can use the driver at
+            // once (and the stale-online rule doesn't switch them off before the first ping).
+            'lat' => ['nullable', 'numeric', 'between:-90,90', 'required_with:lng'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
+        ]);
+        $wantsOnline = $data['is_online'];
         $driver = $this->driver($request);
         $eligibility = $this->compliance->eligibility($driver); // recalculates first
 
@@ -40,7 +47,11 @@ class DriverAvailabilityController extends Controller
             ], 403);
         }
 
-        $driver->refresh()->forceFill(['is_online' => (bool) $wantsOnline])->save();
+        $driver->refresh()->forceFill(['is_online' => (bool) $wantsOnline]);
+        if ($wantsOnline && isset($data['lat'])) {
+            $driver->forceFill(['current_lat' => $data['lat'], 'current_lng' => $data['lng'], 'location_updated_at' => now()]);
+        }
+        $driver->save();
 
         return response()->json(['data' => ['is_online' => $driver->is_online] + $eligibility]);
     }

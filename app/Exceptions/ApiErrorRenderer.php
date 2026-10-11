@@ -61,6 +61,10 @@ class ApiErrorRenderer
             $body['errors'] = $errors;
         }
 
+        if ($e instanceof ApiException && $e->data !== []) {
+            $body['data'] = $e->data;
+        }
+
         if ($status === 429 && isset($headers['Retry-After'])) {
             $body['retry_after'] = (int) $headers['Retry-After']; // seconds, for "try again in N s"
         }
