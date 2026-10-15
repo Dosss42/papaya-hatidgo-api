@@ -43,7 +43,55 @@ class DriverRideController extends Controller
             ->map(fn (RideOffer $o) => tap($o, fn () => $this->rides->expireIfDue($o->rideRequest)))
             ->filter(fn (RideOffer $o) => $o->rideRequest->status === RideStatus::Requested);
 
-        return RideOfferResource::collection($open->values());
+        // meta.is_online (Phase 11): whether the SERVER still has this driver online. The scheduler
+        // can switch a driver off (stale location, expired papers or subscription); the app must
+        // then stop looking online (driver-home brief § 5). meta.server_now: the app measures the
+        // countdown against the SERVER's clock, so a phone whose clock is off still shows the real
+        // time left (and never hides a live request as "expired").
+        return RideOfferResource::collection($open->values())
+            ->additional(['meta' => [
+                'is_online' => (bool) $driver->refresh()->is_online,
+                'server_now' => now()->toIso8601ZuluString(),
+            ]]);
+    }
+
+    /**
+     * GET /drivers/me/earnings?period=day|week|month (Phase 11): cash from COMPLETED rides, on the
+     * Philippine calendar (today, Monday–Sunday, this month). The totals are MySQL's own
+     * final_total sums (N15), so they can't disagree with the receipts.
+     */
+    public function earnings(Request $request): JsonResponse
+    {
+        $period = $request->validate(['period' => ['nullable', 'in:day,week,month']])['period'] ?? 'day';
+        $zone = config('app.business_timezone');
+        $now = now($zone);
+        [$from, $to] = match ($period) {
+            'day' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            'week' => [$now->copy()->startOfWeek(\Carbon\CarbonInterface::MONDAY), $now->copy()->endOfWeek(\Carbon\CarbonInterface::SUNDAY)],
+            'month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
+        };
+
+        $completed = RideRequest::query()
+            ->where('driver_id', $this->driver($request)->id)
+            ->where('status', RideStatus::Completed)
+            ->whereBetween('completed_at', [$from->copy()->utc(), $to->copy()->utc()]);
+
+        $total = (clone $completed)->sum('final_total');
+
+        return response()->json(['data' => [
+            'period' => $period,
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'total' => number_format((float) $total, 2, '.', ''),
+            'rides_count' => (clone $completed)->count(),
+            'rides' => (clone $completed)->latest('completed_at')->limit(50)->get()->map(fn (RideRequest $r) => [
+                'id' => $r->id,
+                'reference_no' => $r->reference_no,
+                'ride_type' => $r->ride_type->value,
+                'total' => $r->final_total,
+                'completed_at' => $r->completed_at->toIso8601ZuluString(),
+            ])->all(),
+        ]]);
     }
 
     public function accept(Request $request, int $ride): RideResource

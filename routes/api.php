@@ -94,6 +94,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('role:driver')->group(function () {
             Route::get('/drivers/me/offers', [DriverRideController::class, 'offers']);
+            Route::get('/drivers/me/earnings', [DriverRideController::class, 'earnings']); // Phase 11
             Route::post('/drivers/me/location', [DriverRideController::class, 'location'])->middleware('throttle:locations');
 
             Route::prefix('rides/{ride}')->whereNumber('ride')->controller(DriverRideController::class)->group(function () {
