@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Rides\FareEstimateRequest;
 use App\Services\FareService;
 use App\Services\GeoService;
+use App\Services\RideService;
+use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
 
 /** Ride types and the fare estimate (Phase 9 step 9.1, phase-0 § E.1). */
@@ -21,6 +23,26 @@ class FareController extends Controller
             fn (RideType $type) => ['ride_type' => $type->value, 'enabled' => $this->fares->isEnabled($type)],
             RideType::cases(),
         )]);
+    }
+
+    /**
+     * GET /booking-options (Phase 10): what the booking screen needs before asking for a fare, so
+     * a pin outside the area or too close is flagged at once (booking brief E1/E2). The server still
+     * checks it all again on /fare/estimate and /rides.
+     */
+    public function bookingOptions(SettingsService $settings): JsonResponse
+    {
+        return response()->json(['data' => [
+            'ride_types' => array_map(fn (RideType $t) => $t->value, $this->fares->enabledTypes()),
+            'service_area' => [
+                'center_lat' => (float) $settings->get('service_area.center_lat', 0),
+                'center_lng' => (float) $settings->get('service_area.center_lng', 0),
+                'radius_km' => (float) $settings->get('service_area.radius_km', 0),
+            ],
+            'min_distance_m' => (int) $settings->get('ride.min_distance_m', 100),
+            'wait_choices' => RideService::WAIT_CHOICES,
+            'request_timeout_seconds' => (int) $settings->get('matching.request_timeout_seconds', 120),
+        ]]);
     }
 
     /**

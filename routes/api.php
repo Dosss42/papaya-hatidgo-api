@@ -82,6 +82,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/rides/{ride}', [RideController::class, 'show'])->whereNumber('ride');
 
         Route::middleware('role:passenger')->group(function () {
+            Route::get('/booking-options', [FareController::class, 'bookingOptions']);
             Route::post('/fare/estimate', [FareController::class, 'estimate'])->middleware('throttle:fare-estimate');
             // `subscribed`: the booking gate built in Phase 8 (403 SUBSCRIPTION_INACTIVE).
             Route::post('/rides', [RideController::class, 'store'])->middleware(['subscribed', 'throttle:book']);

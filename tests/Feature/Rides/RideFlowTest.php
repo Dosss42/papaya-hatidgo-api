@@ -43,7 +43,27 @@ class RideFlowTest extends TestCase
         Sanctum::actingAs($passenger);
         $this->postJson("/api/v1/rides/{$ride}/rating", ['score' => 5, 'comment' => 'Salamat po!'])->assertCreated();
         $this->postJson("/api/v1/rides/{$ride}/rating", ['score' => 1])->assertStatus(409)->assertJsonPath('code', 'ALREADY_RATED');
-        $this->getJson("/api/v1/rides/{$ride}")->assertJsonPath('data.rating.score', 5)->assertJsonPath('data.driver.rating.average', 5);
+        $this->getJson("/api/v1/rides/{$ride}")
+            ->assertJsonPath('data.rating.score', 5)
+            ->assertJsonPath('data.driver.rating.count', 1)
+            ->assertJsonPath('data.driver.rating.average', null); // shown only from 5 ratings (Phase 10)
+    }
+
+    public function test_the_driver_average_appears_from_five_ratings(): void
+    {
+        $driver = $this->driver(self::LAT + 0.001);
+        $last = null;
+        foreach ([5, 4, 5, 4, 5] as $score) {
+            $passenger = $this->passenger();
+            $last = $this->bookId($passenger);
+            foreach (['accept', 'depart', 'arrive', 'start', 'complete'] as $step) {
+                $this->as($driver, $last, $step)->assertOk();
+            }
+            Sanctum::actingAs($passenger);
+            $this->postJson("/api/v1/rides/{$last}/rating", ['score' => $score])->assertCreated();
+        }
+
+        $this->getJson("/api/v1/rides/{$last}")->assertJsonPath('data.driver.rating.count', 5)->assertJsonPath('data.driver.rating.average', 4.6);
     }
 
     public function test_ride_05_every_wrong_order_is_409_and_changes_nothing(): void

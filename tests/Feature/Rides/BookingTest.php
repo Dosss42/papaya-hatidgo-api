@@ -31,6 +31,23 @@ class BookingTest extends TestCase
             ->assertJsonPath('data.1', ['ride_type' => 'two_way', 'enabled' => false]);
     }
 
+    public function test_booking_options_give_the_app_the_area_and_the_rules(): void
+    {
+        Sanctum::actingAs($this->passenger());
+        $this->setting('ride.two_way_enabled', '0');
+
+        $this->getJson('/api/v1/booking-options')->assertOk()
+            ->assertJsonPath('data.ride_types', ['one_way'])
+            ->assertJsonPath('data.service_area.center_lat', 15.35)
+            ->assertJsonPath('data.service_area.radius_km', 8)
+            ->assertJsonPath('data.min_distance_m', 100)
+            ->assertJsonPath('data.wait_choices', [15, 30, 60])
+            ->assertJsonPath('data.request_timeout_seconds', 120);
+
+        Sanctum::actingAs($this->driver());
+        $this->getJson('/api/v1/booking-options')->assertForbidden();
+    }
+
     public function test_the_estimate_prices_every_enabled_type_at_once(): void
     {
         Sanctum::actingAs($this->passenger());

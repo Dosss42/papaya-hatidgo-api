@@ -77,6 +77,13 @@ class RideResource extends JsonResource
         ];
     }
 
+    public const MIN_RATINGS_FOR_AVERAGE = 5;
+
+    private function ratingAverage(\Illuminate\Database\Eloquent\Builder $ratings): ?float
+    {
+        return (clone $ratings)->count() >= self::MIN_RATINGS_FOR_AVERAGE ? round((float) (clone $ratings)->avg('score'), 1) : null;
+    }
+
     /** @return array<string, mixed> */
     private function driverBlock(bool $contact, bool $withPosition): array
     {
@@ -88,7 +95,8 @@ class RideResource extends JsonResource
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'phone' => $contact ? $user->phone : null,
-            'rating' => ['average' => round((float) $ratings->avg('score'), 1) ?: null, 'count' => $ratings->count()],
+            // The average only from 5 ratings: a tiny sample says little (active-ride brief § 8).
+            'rating' => ['average' => $this->ratingAverage($ratings), 'count' => $ratings->count()],
             // For "1.2 km ang layo" (active-ride brief): hidden when unknown, never "0 km".
             'location' => $located ? [
                 'lat' => $this->driver->current_lat,
