@@ -101,8 +101,11 @@ class RideController extends Controller
         return new RideResource($this->rides->passengerReturning($this->mine($request, $ride))->load(self::RELATIONS));
     }
 
-    /** The driven path is thinned to at most this many points (a phone on mobile data, decision #6). */
-    public const TRAIL_MAX_POINTS = 300;
+    /**
+     * The driven path is thinned to at most this many points (a phone on mobile data, decision #6).
+     * 600 keeps the turns of a long trip now that the phone records a point every ~3 s.
+     */
+    public const TRAIL_MAX_POINTS = 600;
 
     /**
      * GET /rides/{id}/trail (Phase 12): the path of the TRIP (from "Simulan ang biyahe" on, so the

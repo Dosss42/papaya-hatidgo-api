@@ -33,7 +33,7 @@ class TrailTest extends TestCase
         $this->as($driver, $ride, 'locations', ['points' => [['lat' => self::LAT - 0.01, 'lng' => self::LNG, 'recorded_at' => now()->toIso8601ZuluString()]]])->assertCreated();
         $this->travel(1)->seconds();
         $this->as($driver, $ride, 'start')->assertOk();
-        $this->travel(10)->minutes(); // the trip's points are all recorded after the start
+        $this->travel(15)->minutes(); // the trip's points are all recorded after the start
         $points = collect(range(0, $count - 1))->map(fn (int $i) => [
             'lat' => self::LAT + $i * 0.0001,
             'lng' => self::LNG,
@@ -64,16 +64,16 @@ class TrailTest extends TestCase
 
     public function test_a_long_ride_is_thinned_but_keeps_its_first_and_last_point(): void
     {
-        [$ride, , $passenger] = $this->drivenRide(450);
+        [$ride, , $passenger] = $this->drivenRide(700);
 
         Sanctum::actingAs($passenger);
         $res = $this->getJson("/api/v1/rides/{$ride}/trail")->assertOk()
-            ->assertJsonPath('data.total_points', 450)
+            ->assertJsonPath('data.total_points', 700)
             ->assertJsonCount(RideController::TRAIL_MAX_POINTS, 'data.points');
         $points = $res->json('data.points');
         $this->assertEqualsWithDelta(self::LAT, $points[0]['lat'], 0.0000001);
-        $this->assertEqualsWithDelta(self::LAT + 449 * 0.0001, end($points)['lat'], 0.0000001);
-        $this->assertSame(451, RideLocation::query()->where('ride_request_id', $ride)->count()); // nothing deleted (+1 before the trip)
+        $this->assertEqualsWithDelta(self::LAT + 699 * 0.0001, end($points)['lat'], 0.0000001);
+        $this->assertSame(701, RideLocation::query()->where('ride_request_id', $ride)->count()); // nothing deleted (+1 before the trip)
     }
 
     public function test_the_way_to_the_pickup_is_not_part_of_the_trip(): void
