@@ -87,6 +87,7 @@ return [
 
     // Field names as the user sees them in the app (replaces :attribute).
     'attributes' => [
+        'value' => 'halaga', // admin settings (Phase 14)
         'first_name' => 'pangalan',
         'last_name' => 'apelyido',
         'email' => 'email',

@@ -60,10 +60,13 @@ class SystemSettingController extends Controller
             throw ValidationException::withMessages(['settings' => __('api.setting_unknown', ['keys' => implode(', ', $unknown)])]);
         }
         $rules = [];
+        $names = [];
         foreach (array_keys($input) as $key) {
-            $rules['settings.'.str_replace('.', '\.', $key)] = ['required', ...self::RULES[$key]];
+            $field = 'settings.'.str_replace('.', '\.', $key);
+            $rules[$field] = ['required', ...self::RULES[$key]];
+            $names[$field] = __('validation.attributes.value'); // "The value must be between 30 and 600." under its own field
         }
-        $request->validate($rules);
+        $request->validate($rules, [], $names);
 
         // At least one ride type must stay on, or nobody can book at all.
         $current = SystemSetting::query()->whereIn('key', ['ride.one_way_enabled', 'ride.two_way_enabled'])->pluck('value', 'key');
