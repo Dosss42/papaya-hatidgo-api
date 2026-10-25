@@ -102,6 +102,11 @@ class RideResource extends JsonResource
                 'lat' => $this->driver->current_lat,
                 'lng' => $this->driver->current_lng,
                 'updated_at' => $this->driver->location_updated_at?->toIso8601ZuluString(),
+                // Phase 12: how old the position is, by the SERVER's clock, so a phone whose clock
+                // is off can't show a live position as stale (or an old one as live). Null = unknown.
+                'age_seconds' => $this->driver->location_updated_at
+                    ? (int) max(0, round($this->driver->location_updated_at->diffInSeconds(now())))
+                    : null,
                 'distance_to_pickup_km' => round(GeoService::distanceKm(
                     (float) $this->driver->current_lat, (float) $this->driver->current_lng, (float) $this->pickup_lat, (float) $this->pickup_lng,
                 ), 2),

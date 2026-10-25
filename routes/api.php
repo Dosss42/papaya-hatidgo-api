@@ -80,6 +80,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/rides/active', [RideController::class, 'active']);
         Route::get('/rides', [RideController::class, 'index']);
         Route::get('/rides/{ride}', [RideController::class, 'show'])->whereNumber('ride');
+        Route::get('/rides/{ride}/trail', [RideController::class, 'trail'])->whereNumber('ride'); // Phase 12
 
         Route::middleware('role:passenger')->group(function () {
             Route::get('/booking-options', [FareController::class, 'bookingOptions']);

@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Rides\StoreRideRequest;
 use App\Http\Resources\RideResource;
+use App\Models\RideLocation;
 use App\Models\RideRequest;
 use App\Services\DriverMatchingService;
 use App\Services\RideService;
@@ -98,6 +99,45 @@ class RideController extends Controller
     public function passengerReturning(Request $request, int $ride): RideResource
     {
         return new RideResource($this->rides->passengerReturning($this->mine($request, $ride))->load(self::RELATIONS));
+    }
+
+    /** The driven path is thinned to at most this many points (a phone on mobile data, decision #6). */
+    public const TRAIL_MAX_POINTS = 300;
+
+    /**
+     * GET /rides/{id}/trail (Phase 12): the path of the TRIP (from "Simulan ang biyahe" on, so the
+     * driver's way to the pickup, where they were before, isn't in the passenger's record), oldest
+     * first, for the ride's own passenger or driver (or an admin). A long ride is thinned evenly,
+     * always keeping the first and the last point, so the line still starts and ends where it did.
+     */
+    public function trail(Request $request, int $ride): JsonResponse
+    {
+        $found = $this->mine($request, $ride); // 404 for anyone else's ride
+        $points = RideLocation::query()
+            ->where('ride_request_id', $found->id)
+            ->when(
+                $found->started_at,
+                fn ($q) => $q->where('recorded_at', '>=', $found->started_at),
+                fn ($q) => $q->whereRaw('1 = 0'), // never started: no trip, no path
+            )
+            ->orderBy('recorded_at')
+            ->orderBy('id')
+            ->get(['lat', 'lng', 'recorded_at']);
+
+        $total = $points->count();
+        if ($total > self::TRAIL_MAX_POINTS) {
+            $step = ($total - 1) / (self::TRAIL_MAX_POINTS - 1);
+            $points = collect(range(0, self::TRAIL_MAX_POINTS - 1))->map(fn (int $i) => $points[(int) round($i * $step)]);
+        }
+
+        return response()->json(['data' => [
+            'total_points' => $total,
+            'points' => $points->map(fn (RideLocation $p) => [
+                'lat' => (float) $p->lat,
+                'lng' => (float) $p->lng,
+                'recorded_at' => $p->recorded_at->toIso8601ZuluString(),
+            ])->values(),
+        ]]);
     }
 
     /** The caller's rides: as passenger, as assigned driver, or every ride for an admin. */
