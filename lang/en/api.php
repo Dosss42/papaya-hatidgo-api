@@ -90,4 +90,11 @@ return [
     'ride_status_in_progress_return' => 'on the way back',
     'ride_status_completed' => 'completed',
     'ride_status_cancelled' => 'cancelled',
+    
+    // Admin website (Phase 14)
+    'admin_account_locked' => 'Administrator accounts can\'t be changed from the website.',
+    'both_ride_types_off' => 'At least one ride type must stay on, or nobody can book.',
+    'setting_unknown' => 'These settings can\'t be changed here: :keys.',
+    'plan_in_use' => 'People already bought this plan, so its audience and length can\'t change. Add a new plan and switch this one off.',
+    'report_range_too_long' => 'Choose a range of at most 92 days.',
 ];

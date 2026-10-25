@@ -29,11 +29,17 @@ class SubscriptionPlan extends Model
         return $this->hasMany(Subscription::class);
     }
 
-    /** The name in the request's language (lang/{en,fil}/plans.php by code); the stored name otherwise. */
+    /**
+     * The name in the request's language (lang/{en,fil}/plans.php by code) while the admin hasn't
+     * renamed the plan; once renamed on the admin website (Phase 14), the stored name wins, so an
+     * edit is never hidden behind a translation.
+     */
     public function displayName(): string
     {
         $key = "plans.{$this->code}";
 
-        return Lang::has($key) ? __($key) : $this->name;
+        $renamed = ! in_array($this->name, [__($key, [], 'en'), __($key, [], 'fil')], true);
+
+        return Lang::has($key) && ! $renamed ? __($key) : $this->name;
     }
 }

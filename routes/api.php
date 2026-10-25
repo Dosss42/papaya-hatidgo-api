@@ -1,10 +1,20 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AuditLogController;
+use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DriverAccountController as AdminDriverAccountController;
 use App\Http\Controllers\Api\V1\Admin\DriverDocumentController as AdminDriverDocumentController;
 use App\Http\Controllers\Api\V1\Admin\DriverVerificationController;
+use App\Http\Controllers\Api\V1\Admin\FareSettingController;
+use App\Http\Controllers\Api\V1\Admin\LiveMapController;
+use App\Http\Controllers\Api\V1\Admin\PlanController;
+use App\Http\Controllers\Api\V1\Admin\ReportController;
+use App\Http\Controllers\Api\V1\Admin\RequirementController;
 use App\Http\Controllers\Api\V1\Admin\RideController as AdminRideController;
 use App\Http\Controllers\Api\V1\Admin\SubscriptionController as AdminSubscriptionController;
+use App\Http\Controllers\Api\V1\Admin\SystemSettingController;
+use App\Http\Controllers\Api\V1\Admin\TransactionController;
+use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DriverAvailabilityController;
 use App\Http\Controllers\Api\V1\DriverDocumentController;
@@ -135,5 +145,26 @@ Route::prefix('v1')->group(function () {
         // Rides (Phase 9): watch, and cancel a stuck ride (reason required, audited).
         Route::get('/rides', [AdminRideController::class, 'index']);
         Route::post('/rides/{ride}/cancel', [AdminRideController::class, 'cancel'])->whereNumber('ride');
+
+        // Phase 14: the admin website. Every write below is audited.
+        Route::get('/dashboard', DashboardController::class);
+        Route::get('/live', LiveMapController::class);
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus'])->whereNumber('user');
+        Route::get('/driver-requirements', [RequirementController::class, 'index']);
+        Route::post('/driver-requirements', [RequirementController::class, 'store']);
+        Route::patch('/driver-requirements/{requirement}', [RequirementController::class, 'update'])->whereNumber('requirement');
+        Route::get('/fare-settings', [FareSettingController::class, 'index']);
+        Route::post('/fare-settings', [FareSettingController::class, 'store']); // insert-only: never edited
+        Route::get('/system-settings', [SystemSettingController::class, 'index']);
+        Route::patch('/system-settings', [SystemSettingController::class, 'update']);
+        Route::get('/subscription-plans', [PlanController::class, 'index']);
+        Route::post('/subscription-plans', [PlanController::class, 'store']);
+        Route::patch('/subscription-plans/{plan}', [PlanController::class, 'update'])->whereNumber('plan');
+        Route::get('/subscription-transactions', [TransactionController::class, 'index']);
+        Route::get('/reports/rides', [ReportController::class, 'rides']);
+        Route::get('/reports/revenue', [ReportController::class, 'revenue']);
+        Route::get('/reports/drivers', [ReportController::class, 'drivers']);
+        Route::get('/audit-logs', [AuditLogController::class, 'index']);
     });
 });

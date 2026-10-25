@@ -91,4 +91,11 @@ return [
     'ride_status_in_progress_return' => 'pabalik na',
     'ride_status_completed' => 'tapos na',
     'ride_status_cancelled' => 'kinansela na',
+    
+    // Admin website (Phase 14)
+    'admin_account_locked' => 'Hindi mababago sa website ang account ng administrator.',
+    'both_ride_types_off' => 'Kailangang may isang uri ng biyahe na naka-on, kundi walang makakapag-book.',
+    'setting_unknown' => 'Hindi mababago rito ang mga setting na ito: :keys.',
+    'plan_in_use' => 'May mga bumili na ng plan na ito, kaya hindi na mababago ang para kanino at gaano katagal. Gumawa ng bagong plan at i-off ito.',
+    'report_range_too_long' => 'Pumili ng hanggang 92 araw lang.',
 ];
