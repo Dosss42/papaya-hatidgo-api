@@ -109,9 +109,10 @@ class DriverMatchingService
      */
     public function accept(Driver $driver, RideRequest $ride): RideRequest
     {
-        $offer = $ride->offers()->where('driver_id', $driver->id)->first();
+        $offer = $ride->offers()->where('driver_id', $driver->id)->first()
+            ?? $this->offerFromBoard($driver, $ride);
         if (! $offer) {
-            throw (new \Illuminate\Database\Eloquent\ModelNotFoundException)->setModel(RideRequest::class); // not offered to you: 404
+            throw (new \Illuminate\Database\Eloquent\ModelNotFoundException)->setModel(RideRequest::class); // not for you: 404
         }
         if ($ride->status !== RideStatus::Requested || $ride->expires_at->isPast()) {
             throw $this->gone($ride);
@@ -156,6 +157,85 @@ class DriverMatchingService
         $this->notifications->rideAccepted($ride->refresh());
 
         return $ride;
+    }
+
+    // ---------------------------------------------------------------- the request board (after Phase 13)
+
+    /**
+     * The request board (the student's hybrid dispatch): open requests within
+     * matching.board_radius_km (default 5) of an online, located driver, nearest first, so the
+     * driver can CHOOSE a ride. The nearest drivers still get the ringing alert (dispatch()).
+     * Requests this driver already answered (skipped or missed) are left out, and so are the ones
+     * offered to them (those come with the alert).
+     *
+     * @return Collection<int, RideRequest> each with distance_km set
+     */
+    public function boardFor(Driver $driver): Collection
+    {
+        if (! $this->mayUseBoard($driver)) {
+            return collect();
+        }
+        $reachKm = $this->boardReachKm();
+
+        return RideRequest::query()
+            ->where('status', RideStatus::Requested)
+            ->where('expires_at', '>', now())
+            ->whereDoesntHave('offers', fn ($q) => $q->where('driver_id', $driver->id))
+            ->get()
+            ->map(function (RideRequest $ride) use ($driver) {
+                $ride->setAttribute('distance_km', GeoService::distanceKm(
+                    (float) $driver->current_lat, (float) $driver->current_lng, (float) $ride->pickup_lat, (float) $ride->pickup_lng,
+                ));
+
+                return $ride;
+            })
+            ->filter(fn (RideRequest $ride) => $ride->distance_km <= $reachKm)
+            ->sortBy('distance_km')
+            ->take(20)
+            ->values();
+    }
+
+    /**
+     * Accepting a ride found on the board: it gets its offer row now (the record of who was
+     * asked, and what the race-safe accept below needs). Only for an open request within reach
+     * of an eligible driver; anything else stays a 404.
+     */
+    private function offerFromBoard(Driver $driver, RideRequest $ride): ?RideOffer
+    {
+        if (! $this->mayUseBoard($driver)) {
+            return null;
+        }
+        $km = GeoService::distanceKm((float) $driver->current_lat, (float) $driver->current_lng, (float) $ride->pickup_lat, (float) $ride->pickup_lng);
+        if ($km > $this->boardReachKm()) {
+            return null;
+        }
+        if ($ride->status !== RideStatus::Requested || $ride->expires_at->isPast()) {
+            throw $this->gone($ride); // it WAS on this driver's board: say "taken" / "gone", not "not found"
+        }
+
+        try {
+            return RideOffer::forceCreate(['ride_request_id' => $ride->id, 'driver_id' => $driver->id, 'status' => OfferStatus::Offered]);
+        } catch (UniqueConstraintViolationException) {
+            return $ride->offers()->where('driver_id', $driver->id)->first(); // made a moment ago by another request
+        }
+    }
+
+    /** Online, located recently, verified, with a verified tricycle and no ride: the cheap checks (accept() re-checks everything). */
+    private function mayUseBoard(Driver $driver): bool
+    {
+        $driver->refresh()->loadMissing('activeVehicle');
+
+        return $driver->is_online
+            && $driver->current_lat !== null
+            && $driver->location_updated_at?->gte($this->freshSince())
+            && $driver->compliance_status === ComplianceStatus::Verified
+            && $driver->activeVehicle?->status === VehicleStatus::Verified
+            && ! $driver->rideRequests()->whereIn('status', RideRequest::ACTIVE_STATUSES)->exists();
+    }
+
+    private function boardReachKm(): float
+    {
+        return (float) $this->settings->get('matching.board_radius_km', 5);
     }
 
     /** POST /rides/{id}/decline ("Laktawan"): recorded, and the next nearest driver is offered (E.5 #6). */

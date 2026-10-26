@@ -116,11 +116,12 @@ class MatchingTest extends TestCase
         $this->assertSame('requested', $this->statusOf($ride));
     }
 
-    public function test_a_ride_not_offered_to_you_cannot_be_accepted(): void
+    public function test_a_ride_beyond_the_request_board_cannot_be_accepted(): void
     {
+        // Within 5 km a driver may choose it from the request board (RequestBoardTest); beyond, never.
         $this->driver(self::LAT + 0.001);
         $ride = $this->bookId($this->passenger());
-        $stranger = $this->driver(self::LAT + 0.04); // beyond the radius: never offered
+        $stranger = $this->driver(self::LAT + 0.06); // ~6.7 km: beyond the alert AND the board
 
         $this->as($stranger, $ride, 'accept')->assertNotFound();
         $this->as($stranger, $ride, 'decline')->assertNotFound();

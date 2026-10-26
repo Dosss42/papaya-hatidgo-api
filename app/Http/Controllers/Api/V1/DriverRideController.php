@@ -48,10 +48,15 @@ class DriverRideController extends Controller
         // then stop looking online (driver-home brief § 5). meta.server_now: the app measures the
         // countdown against the SERVER's clock, so a phone whose clock is off still shows the real
         // time left (and never hides a live request as "expired").
+        // meta.board (after Phase 13): the request board, open requests within reach that the
+        // driver can choose from (DriverMatchingService::boardFor), nearest first.
         return RideOfferResource::collection($open->values())
             ->additional(['meta' => [
                 'is_online' => (bool) $driver->refresh()->is_online,
                 'server_now' => now()->toIso8601ZuluString(),
+                'board' => $this->matching->boardFor($driver)
+                    ->map(fn (RideRequest $ride) => RideOfferResource::shape(null, $ride, $driver))
+                    ->all(),
             ]]);
     }
 

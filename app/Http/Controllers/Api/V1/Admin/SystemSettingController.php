@@ -25,6 +25,7 @@ class SystemSettingController extends Controller
         'ride.one_way_enabled' => ['boolean'],
         'ride.two_way_enabled' => ['boolean'],
         'matching.radius_km' => ['numeric', 'between:0.5,20'],
+        'matching.board_radius_km' => ['numeric', 'between:1,20'],
         'matching.max_offers' => ['integer', 'between:1,20'],
         'matching.request_timeout_seconds' => ['integer', 'between:30,600'],
         'matching.stale_online_minutes' => ['integer', 'between:1,15'],
