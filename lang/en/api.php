@@ -78,6 +78,8 @@ return [
     'driver_busy' => 'Finish your current ride first.',
     'not_online' => 'Go online first.',
     'returning_too_soon' => 'The driver was told a moment ago. You can tell them again in a few minutes.',
+    'cancel_locked_on_the_way' => "Your driver is on the way. You can cancel if they haven't arrived by :time.",
+    'cancel_locked_arrived' => 'Your driver is already here, so the ride can no longer be cancelled in the app. Please talk to your driver.',
     'rate_after_completed' => 'You can rate a ride once it is completed.',
     'already_rated' => "You've already rated this ride.",
     'ride_status_requested' => 'looking for a driver',

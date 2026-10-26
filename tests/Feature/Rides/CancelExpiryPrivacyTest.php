@@ -37,9 +37,9 @@ class CancelExpiryPrivacyTest extends TestCase
         return [$ride, $passenger, $driver];
     }
 
-    public function test_ride_06_the_passenger_can_cancel_until_the_trip_starts(): void
+    public function test_ride_06_the_passenger_can_cancel_until_the_driver_sets_off(): void
     {
-        foreach ([[], ['accept'], ['accept', 'depart'], ['accept', 'depart', 'arrive']] as $steps) {
+        foreach ([[], ['accept']] as $steps) {
             [$ride, $passenger] = $this->rideAt($steps);
             Sanctum::actingAs($passenger);
             $this->postJson("/api/v1/rides/{$ride}/cancel", ['reason' => 'Nagbago ang plano'])->assertOk()
@@ -55,6 +55,47 @@ class CancelExpiryPrivacyTest extends TestCase
         [$started, $passenger] = $this->rideAt(['accept', 'depart', 'arrive', 'start']);
         Sanctum::actingAs($passenger);
         $this->postJson("/api/v1/rides/{$started}/cancel")->assertStatus(409)->assertJsonPath('code', 'INVALID_TRANSITION');
+    }
+
+    public function test_once_the_driver_is_on_the_way_the_passenger_may_cancel_only_if_the_driver_is_late(): void
+    {
+        [$ride, $passenger] = $this->rideAt(['accept', 'depart']); // "On my way" just now
+        Sanctum::actingAs($passenger);
+
+        // The ride tells the app when its Cancel button opens (10 minutes after "On my way").
+        $opensAt = $this->getJson("/api/v1/rides/{$ride}")->assertOk()
+            ->assertJsonPath('data.passenger_cancel.allowed', false)
+            ->json('data.passenger_cancel.opens_at');
+        $this->assertEqualsWithDelta(now()->addMinutes(10)->timestamp, strtotime($opensAt), 5);
+
+        $this->withHeader('Accept-Language', 'en')->postJson("/api/v1/rides/{$ride}/cancel", ['reason' => 'changed_plans'])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'CANCEL_LOCKED')
+            ->assertJsonPath('data.opens_at', $opensAt)
+            ->assertJsonPath('message', fn (string $m) => str_starts_with($m, "Your driver is on the way. You can cancel if they haven't arrived by "));
+        $this->assertSame('driver_arriving', $this->statusOf($ride));
+
+        // The driver is late: the Cancel opens.
+        $this->travel(10)->minutes();
+        $this->getJson("/api/v1/rides/{$ride}")->assertJsonPath('data.passenger_cancel.allowed', true);
+        $this->postJson("/api/v1/rides/{$ride}/cancel", ['reason' => 'driver_late'])->assertOk()
+            ->assertJsonPath('data.cancelled_by', 'passenger');
+    }
+
+    public function test_the_admin_sets_how_late_and_an_arrived_driver_cannot_be_cancelled_by_the_passenger(): void
+    {
+        $this->setting('ride.passenger_cancel_after_minutes', '3');
+        [$ride, $passenger] = $this->rideAt(['accept', 'depart']);
+        $this->travel(3)->minutes();
+        Sanctum::actingAs($passenger);
+        $this->postJson("/api/v1/rides/{$ride}/cancel")->assertOk();
+
+        [$arrived, $passenger, $driver] = $this->rideAt(['accept', 'depart', 'arrive']);
+        Sanctum::actingAs($passenger);
+        $this->getJson("/api/v1/rides/{$arrived}")->assertJsonPath('data.passenger_cancel', ['allowed' => false, 'opens_at' => null]);
+        $this->postJson("/api/v1/rides/{$arrived}/cancel")->assertStatus(409)->assertJsonPath('code', 'CANCEL_LOCKED');
+        // The driver can still cancel a passenger who doesn't show up.
+        $this->as($driver, $arrived, 'cancel', ['reason' => 'passenger_no_show'])->assertOk();
     }
 
     public function test_the_driver_cancels_only_with_a_reason_and_only_before_the_start(): void

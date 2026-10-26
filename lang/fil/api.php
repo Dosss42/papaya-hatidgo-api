@@ -79,6 +79,8 @@ return [
     'driver_busy' => 'Tapusin muna ang kasalukuyang biyahe.',
     'not_online' => 'Mag-online muna.',
     'returning_too_soon' => 'Nasabihan na ang driver kanina. Puwede ulit pagkalipas ng ilang minuto.',
+    'cancel_locked_on_the_way' => 'Papunta na ang driver mo. Puwede kang mag-cancel kung wala pa siya pagsapit ng :time.',
+    'cancel_locked_arrived' => 'Nandito na ang driver mo, kaya hindi na ito mako-cancel sa app. Kausapin ang driver mo.',
     'rate_after_completed' => 'Puwede mong i-rate ang biyahe kapag tapos na ito.',
     'already_rated' => 'Na-rate mo na ang biyaheng ito.',
     'ride_status_requested' => 'naghahanap pa ng driver',

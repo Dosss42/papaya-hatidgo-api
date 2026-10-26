@@ -29,6 +29,7 @@ class SystemSettingController extends Controller
         'matching.request_timeout_seconds' => ['integer', 'between:30,600'],
         'matching.stale_online_minutes' => ['integer', 'between:1,15'],
         'ride.min_distance_m' => ['integer', 'between:0,5000'],
+        'ride.passenger_cancel_after_minutes' => ['integer', 'between:1,60'],
         'subscription.grace_days' => ['integer', 'between:0,30'],
         // The Philippines spans about 4.5–21.5 °N and 116–127 °E.
         'service_area.center_lat' => ['numeric', 'between:4,22'],

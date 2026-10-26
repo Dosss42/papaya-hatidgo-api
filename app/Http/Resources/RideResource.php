@@ -6,6 +6,7 @@ use App\Enums\RideStatus;
 use App\Enums\UserRole;
 use App\Models\Rating;
 use App\Services\GeoService;
+use App\Services\RideService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -69,12 +70,23 @@ class RideResource extends JsonResource
                 'make' => $this->vehicle->make,
                 'model' => $this->vehicle->model,
             ] : null,
+            // The passenger's Cancel button (the cancel window): shown when allowed; while the driver
+            // is on the way, the app says from what time it opens. Null for everyone else.
+            'passenger_cancel' => $asPassenger ? $this->passengerCancel() : null,
             'passenger' => ! $asPassenger && $this->driver_id !== null ? [
                 'first_name' => $this->passenger->user->first_name,
                 'phone' => $contact ? $this->passenger->user->phone : null,
             ] : null,
             'rating' => $this->rating ? ['score' => $this->rating->score, 'comment' => $this->rating->comment] : null,
         ];
+    }
+
+    /** @return array{allowed: bool, opens_at: ?string} */
+    private function passengerCancel(): array
+    {
+        ['allowed' => $allowed, 'opens_at' => $opensAt] = app(RideService::class)->passengerCancelWindow($this->resource);
+
+        return ['allowed' => $allowed, 'opens_at' => $opensAt?->toIso8601ZuluString()];
     }
 
     public const MIN_RATINGS_FOR_AVERAGE = 5;

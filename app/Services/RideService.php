@@ -191,7 +191,7 @@ class RideService
 
     /**
      * POST /rides/{id}/cancel (decision #3):
-     *   passenger: until the trip starts, reason optional
+     *   passenger: before the driver sets off, or once the driver is late (passengerCancelWindow), reason optional
      *   driver:    an accepted ride until the trip starts, reason required (checked by the request)
      *   admin:     any active ride, reason required, audited
      */
@@ -213,6 +213,9 @@ class RideService
             if (! in_array($locked->status, $allowed, true)) {
                 throw $this->invalid($locked);
             }
+            if ($by === CancelledBy::Passenger) {
+                $this->assertPassengerMayCancel($locked);
+            }
             $locked->forceFill([
                 'status' => RideStatus::Cancelled,
                 'current_leg' => null,
@@ -231,6 +234,49 @@ class RideService
         $this->notifications->rideCancelled($cancelled, $by, $reason);
 
         return $cancelled;
+    }
+
+    /**
+     * When may the PASSENGER cancel? (the student's rule, after Phase 13)
+     *   requested, accepted   yes: the driver hasn't set off yet
+     *   driver_arriving       only once the driver is late: N minutes after "On my way"
+     *                         (ride.passenger_cancel_after_minutes), so a driver's trip isn't wasted,
+     *                         but a passenger is never trapped by a driver who doesn't come
+     *   arrived and later     no: the driver is there (the driver can still cancel a no-show)
+     *
+     * @return array{allowed: bool, opens_at: ?\Carbon\CarbonInterface}
+     */
+    public function passengerCancelWindow(RideRequest $ride): array
+    {
+        if (in_array($ride->status, [RideStatus::Requested, RideStatus::Accepted], true)) {
+            return ['allowed' => true, 'opens_at' => null];
+        }
+        if ($ride->status === RideStatus::DriverArriving) {
+            $opensAt = ($ride->arriving_at ?? now())->copy()
+                ->addMinutes((int) $this->settings->get('ride.passenger_cancel_after_minutes', 10));
+
+            return ['allowed' => ! $opensAt->isFuture(), 'opens_at' => $opensAt];
+        }
+
+        return ['allowed' => false, 'opens_at' => null];
+    }
+
+    /** 409 CANCEL_LOCKED, saying when cancelling opens (or that the driver is already there). */
+    private function assertPassengerMayCancel(RideRequest $ride): void
+    {
+        ['allowed' => $allowed, 'opens_at' => $opensAt] = $this->passengerCancelWindow($ride);
+        if ($allowed) {
+            return;
+        }
+
+        throw new ApiException(
+            $opensAt
+                ? __('api.cancel_locked_on_the_way', ['time' => $opensAt->copy()->setTimezone(config('app.business_timezone'))->format('g:i A')])
+                : __('api.cancel_locked_arrived'),
+            'CANCEL_LOCKED',
+            409,
+            data: ['opens_at' => $opensAt?->toIso8601ZuluString()],
+        );
     }
 
     /**

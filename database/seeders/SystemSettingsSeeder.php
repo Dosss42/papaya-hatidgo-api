@@ -24,6 +24,7 @@ class SystemSettingsSeeder extends Seeder
             ['matching.request_timeout_seconds', '120', 'int', 'Unaccepted requests are cancelled after this'],
             ['matching.stale_online_minutes', '3', 'int', 'A driver counts as online only if located within this many minutes'],
             ['ride.min_distance_m', '100', 'int', 'Minimum pickup-to-destination distance (booking brief)'],
+            ['ride.passenger_cancel_after_minutes', '10', 'int', 'Once the driver is on the way, the passenger may cancel only if the driver has not arrived after this many minutes'],
 
             // Subscriptions (N18: effective status is computed with this)
             ['subscription.grace_days', '0', 'int', 'Days after ends_at before a subscription counts as expired'],
