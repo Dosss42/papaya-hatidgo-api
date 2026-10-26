@@ -119,6 +119,24 @@ class AdminWebApiTest extends TestCase
         $this->assertSame(2, FareSetting::count()); // the old row was not touched
     }
 
+    public function test_the_admins_waiting_fee_prices_the_balikan_estimate_after_the_free_minutes(): void
+    {
+        $this->asAdmin();
+        $fare = ['base_fare' => 20, 'rate_per_km' => 10, 'minimum_fare' => 30, 'return_rate_multiplier' => 1, 'waiting_free_minutes' => 10, 'waiting_fee_per_minute' => 2, 'service_fee' => 5];
+        $this->postJson('/api/v1/admin/fare-settings', $fare)->assertCreated();
+
+        Sanctum::actingAs($this->passenger());
+        $trip = ['pickup_lat' => self::LAT, 'pickup_lng' => self::LNG, 'destination_lat' => self::LAT + 0.02, 'destination_lng' => self::LNG];
+        $balikan = fn (?int $wait) => collect($this->postJson('/api/v1/fare/estimate', $trip + ['wait_minutes' => $wait])->assertOk()->json('data.options'))
+            ->firstWhere('ride_type', 'two_way');
+
+        $this->assertSame('40.00', $balikan(30)['waiting_fee']); // (30 − 10 free) × ₱2
+        $this->assertSame('0.00', $balikan(null)['waiting_fee']); // "not sure": charged at the end for the real wait
+        $this->assertSame('5.00', $balikan(30)['service_fee']);
+        $this->assertSame(10, $balikan(30)['breakdown']['waiting_free_minutes']); // the app shows the rule
+        $this->assertSame('2.00', $balikan(30)['breakdown']['waiting_fee_per_minute']);
+    }
+
     public function test_settings_are_checked_by_range_all_or_nothing_and_audited(): void
     {
         $this->asAdmin();
