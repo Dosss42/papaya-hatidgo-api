@@ -34,5 +34,9 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <!-- Tests never send real pushes; the push tests use a throwaway key and a faked Google. -->
         <env name="FIREBASE_CREDENTIALS" value="" force="true"/>
+        <!-- No routing service in tests: the fare tests keep the straight-line distance (factor 1).
+             The routing tests use a faked OpenRouteService and their own factor. -->
+        <env name="OPENROUTESERVICE_KEY" value="" force="true"/>
+        <env name="ROUTING_FALLBACK_FACTOR" value="1" force="true"/>
     </php>
 </phpunit>

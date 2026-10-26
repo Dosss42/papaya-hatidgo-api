@@ -42,6 +42,7 @@ class RideService
         private readonly SettingsService $settings,
         private readonly AuditService $audit,
         private readonly NotificationService $notifications,
+        private readonly RoutingService $routing,
     ) {}
 
     // ---------------------------------------------------------------- booking (9.2)
@@ -71,9 +72,10 @@ class RideService
 
         // § K threat #1: the server computes the fare; the app's number is only compared.
         $fare = $this->fares->current();
-        $km = GeoService::distanceKm((float) $data['pickup_lat'], (float) $data['pickup_lng'], (float) $data['destination_lat'], (float) $data['destination_lng']);
+        // Along the roads (after Phase 13): the same route the estimate used a moment ago (cached).
+        $route = $this->routing->route((float) $data['pickup_lat'], (float) $data['pickup_lng'], (float) $data['destination_lat'], (float) $data['destination_lng']);
         $wait = $type === RideType::TwoWay ? ($data['wait_minutes'] ?? null) : null;
-        $quote = $this->fares->quote($type, $km, $wait, $fare);
+        $quote = $this->fares->quote($type, $route->km, $wait, $fare);
 
         if (isset($data['expected_total']) && FareService::centavos($data['expected_total']) !== $quote->total()) {
             $total = FareQuote::money($quote->total());
@@ -96,6 +98,8 @@ class RideService
             'status' => RideStatus::Requested,
             'outbound_distance_km' => $quote->distanceKm,
             'return_distance_km' => $quote->returnDistanceKm,
+            'route_points' => $route->points,
+            'distance_by_road' => $route->byRoad,
             'outbound_fare' => FareQuote::money($quote->outbound),
             'return_fare' => FareQuote::money($quote->return),
             'waiting_fee' => FareQuote::money($quote->waiting),

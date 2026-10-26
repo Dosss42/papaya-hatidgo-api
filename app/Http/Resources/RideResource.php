@@ -43,6 +43,9 @@ class RideResource extends JsonResource
             'destination' => ['lat' => $this->destination_lat, 'lng' => $this->destination_lng, 'landmark' => $this->destination_landmark],
             'passenger_note' => $this->passenger_note,
             'distance_km' => $this->outbound_distance_km,
+            // The road the fare was measured on (after Phase 13): [[lat, lng], …]; null on older rides.
+            'route' => $this->route_points,
+            'distance_by_road' => $this->distance_by_road,
             'return_distance_km' => $this->return_distance_km,
             'fare' => [
                 'outbound_fare' => $this->outbound_fare,

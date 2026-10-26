@@ -42,6 +42,14 @@ return [
         'credentials' => env('FIREBASE_CREDENTIALS'),
     ],
 
+    // Road routing (after Phase 13): OpenRouteService measures the trip along the roads for the
+    // fare. Key only in .env. Without it (or when the service is down), the straight line × the
+    // fallback factor is used (RoutingService::FALLBACK).
+    'routing' => [
+        'ors_key' => env('OPENROUTESERVICE_KEY'),
+        'fallback_factor' => (float) env('ROUTING_FALLBACK_FACTOR', 1.3),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

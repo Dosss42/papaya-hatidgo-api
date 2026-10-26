@@ -41,6 +41,8 @@ class RideRequest extends Model
             'destination_lng' => 'decimal:7',
             'outbound_distance_km' => 'decimal:2',
             'return_distance_km' => 'decimal:2',
+            'route_points' => 'array',
+            'distance_by_road' => 'boolean',
             'outbound_fare' => 'decimal:2',
             'return_fare' => 'decimal:2',
             'waiting_fee' => 'decimal:2',

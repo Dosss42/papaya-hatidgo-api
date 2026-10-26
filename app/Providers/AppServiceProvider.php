@@ -17,6 +17,7 @@ use App\Payments\FakeGateway;
 use App\Payments\PaymentGateway;
 use App\Payments\PayMongoGateway;
 use App\Push\FcmClient;
+use App\Services\RoutingService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -59,6 +60,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Push notifications (Phase 13). One per process, so the key file is read once.
         $this->app->singleton(FcmClient::class, fn () => new FcmClient(config('services.fcm.credentials')));
+
+        // Road routing for the fare (after Phase 13).
+        $this->app->singleton(RoutingService::class, fn () => new RoutingService(
+            config('services.routing.ors_key'),
+            (float) config('services.routing.fallback_factor', RoutingService::FALLBACK),
+        ));
     }
 
     /**

@@ -6,8 +6,8 @@ use App\Enums\RideType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Rides\FareEstimateRequest;
 use App\Services\FareService;
-use App\Services\GeoService;
 use App\Services\RideService;
+use App\Services\RoutingService;
 use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
 
@@ -49,14 +49,18 @@ class FareController extends Controller
      * POST /fare/estimate: every ENABLED type priced at once, so the booking sheet can show
      * "One-way ₱62 · Balikan ₱94" side by side (booking brief § 4, step 3).
      */
-    public function estimate(FareEstimateRequest $request): JsonResponse
+    public function estimate(FareEstimateRequest $request, RoutingService $routing): JsonResponse
     {
         $data = $request->validated();
         $fare = $this->fares->current();
-        $km = GeoService::distanceKm((float) $data['pickup_lat'], (float) $data['pickup_lng'], (float) $data['destination_lat'], (float) $data['destination_lng']);
+        // Along the roads (after Phase 13); POST /rides a moment later reuses the same route.
+        $route = $routing->route((float) $data['pickup_lat'], (float) $data['pickup_lng'], (float) $data['destination_lat'], (float) $data['destination_lng']);
+        $km = $route->km;
 
         return response()->json(['data' => [
             'distance_km' => number_format(round($km, 2), 2, '.', ''),
+            'by_road' => $route->byRoad,
+            'route' => $route->points, // [[lat, lng], …]: the line the map draws
             'options' => array_map(
                 fn (RideType $type) => $this->fares->quote($type, $km, $data['wait_minutes'] ?? null, $fare)->toArray(),
                 $this->fares->enabledTypes(),
