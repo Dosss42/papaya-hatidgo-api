@@ -65,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(RoutingService::class, fn () => new RoutingService(
             config('services.routing.ors_key'),
             (float) config('services.routing.fallback_factor', RoutingService::FALLBACK),
+            config('services.routing.osrm_url'),
         ));
     }
 

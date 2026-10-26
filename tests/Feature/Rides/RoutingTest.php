@@ -60,6 +60,24 @@ class RoutingTest extends TestCase
             && $r['coordinates'] === [[121.05, 15.35], [121.05, 15.37]]);
     }
 
+    public function test_without_a_key_the_free_osrm_server_measures_the_road(): void
+    {
+        $this->app->instance(RoutingService::class, new RoutingService(null, 1.3, 'https://osrm.test'));
+        Http::fake(['osrm.test/*' => Http::response([
+            'code' => 'Ok',
+            'routes' => [['distance' => 2900, 'geometry' => ['coordinates' => [[121.05, 15.35], [121.055, 15.36], [121.05, 15.37]]]]],
+        ])]);
+        Sanctum::actingAs($this->passenger());
+
+        $estimate = $this->postJson('/api/v1/fare/estimate', $this->trip())->assertOk();
+
+        $this->assertSame('2.90', $estimate->json('data.distance_km'));
+        $this->assertTrue($estimate->json('data.by_road'));
+        $this->assertSame([15.36, 121.055], $estimate->json('data.route.1'));
+        Http::assertSent(fn (Request $r) => str_starts_with($r->url(), 'https://osrm.test/route/v1/driving/121.05,15.35;121.05,15.37')
+            && ! $r->hasHeader('Authorization'));
+    }
+
     public function test_when_the_routing_service_is_down_the_straight_line_times_the_detour_is_used(): void
     {
         Http::fake(['api.openrouteservice.org/*' => Http::response(['error' => ['message' => 'quota']], 503)]);

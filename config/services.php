@@ -42,10 +42,11 @@ return [
         'credentials' => env('FIREBASE_CREDENTIALS'),
     ],
 
-    // Road routing (after Phase 13): OpenRouteService measures the trip along the roads for the
-    // fare. Key only in .env. Without it (or when the service is down), the straight line × the
-    // fallback factor is used (RoutingService::FALLBACK).
+    // Road routing (after Phase 13): the trip is measured along the roads for the fare. OSRM's
+    // free public server by default (no key); OpenRouteService instead when a key is in .env.
+    // When the service is down, the straight line × the fallback factor (RoutingService::FALLBACK).
     'routing' => [
+        'osrm_url' => env('ROUTING_OSRM_URL', 'https://router.project-osrm.org'),
         'ors_key' => env('OPENROUTESERVICE_KEY'),
         'fallback_factor' => (float) env('ROUTING_FALLBACK_FACTOR', 1.3),
     ],
