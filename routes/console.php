@@ -30,3 +30,11 @@ Schedule::command('documents:expire')
 // is older than 3 minutes → offline (the stale-online rule).
 Schedule::command('rides:expire')->everyMinute()->withoutOverlapping();
 Schedule::command('drivers:offline-stale')->everyMinute()->withoutOverlapping();
+
+// Notifications (Phase 13): papers expiring / expired, subscriptions ending / ended. Hourly in the
+// daytime only (nobody is woken at midnight by a reminder); each reminder is sent once.
+Schedule::command('notifications:reminders')
+    ->hourly()
+    ->between('7:00', '20:00')
+    ->timezone(config('app.business_timezone'))
+    ->withoutOverlapping();

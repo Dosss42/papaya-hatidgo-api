@@ -41,6 +41,7 @@ class RideService
         private readonly DriverMatchingService $matching,
         private readonly SettingsService $settings,
         private readonly AuditService $audit,
+        private readonly NotificationService $notifications,
     ) {}
 
     // ---------------------------------------------------------------- booking (9.2)
@@ -120,14 +121,20 @@ class RideService
 
     public function depart(Driver $driver, RideRequest $ride): RideRequest
     {
-        return $this->transition($driver, $ride, 'depart', fn (RideRequest $r) => $r->status === RideStatus::Accepted,
+        $ride = $this->transition($driver, $ride, 'depart', fn (RideRequest $r) => $r->status === RideStatus::Accepted,
             fn (RideRequest $r) => $r->forceFill(['status' => RideStatus::DriverArriving, 'arriving_at' => now()]));
+        $this->notifications->driverArriving($ride);
+
+        return $ride;
     }
 
     public function arrive(Driver $driver, RideRequest $ride): RideRequest
     {
-        return $this->transition($driver, $ride, 'arrive', fn (RideRequest $r) => $r->status === RideStatus::DriverArriving,
+        $ride = $this->transition($driver, $ride, 'arrive', fn (RideRequest $r) => $r->status === RideStatus::DriverArriving,
             fn (RideRequest $r) => $r->forceFill(['status' => RideStatus::Arrived, 'arrived_at' => now()]));
+        $this->notifications->driverArrived($ride);
+
+        return $ride;
     }
 
     public function start(Driver $driver, RideRequest $ride): RideRequest
@@ -157,10 +164,13 @@ class RideService
     /** One-way at the destination, or Balikan back at the pickup. Final fare set here. */
     public function complete(Driver $driver, RideRequest $ride): RideRequest
     {
-        return $this->transition($driver, $ride, 'complete',
+        $ride = $this->transition($driver, $ride, 'complete',
             fn (RideRequest $r) => $r->status === RideStatus::InProgress
                 && ($r->ride_type === RideType::OneWay ? $r->current_leg === null : $r->current_leg === RideLeg::Return),
             fn (RideRequest $r) => $this->finish($r, returnLeg: true));
+        $this->notifications->rideCompleted($ride);
+
+        return $ride;
     }
 
     /**
@@ -172,6 +182,7 @@ class RideService
         $ride = $this->transition($driver, $ride, 'end-at-destination', fn (RideRequest $r) => $this->onLeg($r, RideLeg::Waiting),
             fn (RideRequest $r) => $this->finish($r, returnLeg: false));
         $this->audit->record($driver->user, 'ride.ended_at_destination', $ride, null, ['reason' => $reason]);
+        $this->notifications->rideCompleted($ride);
 
         return $ride;
     }
@@ -217,7 +228,7 @@ class RideService
         if ($by === CancelledBy::Admin) {
             $this->audit->record($actor, 'ride.cancelled_by_admin', $cancelled, null, ['reason' => $reason]);
         }
-        // "Ride cancelled" push to the other party: Phase 13.
+        $this->notifications->rideCancelled($cancelled, $by, $reason);
 
         return $cancelled;
     }
@@ -232,7 +243,7 @@ class RideService
             return $ride;
         }
 
-        DB::transaction(function () use ($ride) {
+        $expired = DB::transaction(function () use ($ride) {
             $updated = RideRequest::query()
                 ->whereKey($ride->id)
                 ->where('status', RideStatus::Requested)
@@ -247,8 +258,12 @@ class RideService
             if ($updated === 1) {
                 $this->matching->closeOffers($ride, OfferStatus::Expired);
             }
+
+            return $updated === 1;
         });
-        // "No driver found" push: Phase 13.
+        if ($expired) {
+            $this->notifications->noDriverFound($ride->refresh()); // once: only the run that expired it
+        }
 
         return $ride->refresh();
     }
@@ -282,7 +297,7 @@ class RideService
         }
 
         $ride->forceFill(['passenger_returning_at' => now()])->save();
-        // "Pabalik na ang pasahero" push to the driver: Phase 13 (the driver's poll already shows it).
+        $this->notifications->passengerReturning($ride); // the driver's poll shows it too
 
         return $ride;
     }
@@ -355,7 +370,6 @@ class RideService
             }
             $apply($locked);
             $locked->save();
-            // Status pushes (accepted / arriving / arrived / completed): Phase 13.
 
             return $locked->refresh();
         });

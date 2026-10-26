@@ -28,6 +28,7 @@ class DriverMatchingService
         private readonly SettingsService $settings,
         private readonly SubscriptionService $subscriptions,
         private readonly DriverComplianceService $compliance,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -49,18 +50,19 @@ class DriverMatchingService
         }
 
         $alreadyAsked = $ride->offers()->pluck('driver_id')->all(); // never offer the same ride twice
-        $made = 0;
+        $offered = [];
         foreach ($this->nearestEligible($ride, $alreadyAsked, $needed) as $driver) {
             try {
                 RideOffer::forceCreate(['ride_request_id' => $ride->id, 'driver_id' => $driver->id, 'status' => OfferStatus::Offered]);
-                $made++;
+                $offered[] = $driver;
             } catch (UniqueConstraintViolationException) {
                 // Two polls topped up at the same moment: this driver already has the offer.
             }
         }
-        // "New ride offer" push to these drivers: Phase 13 (the driver app polls meanwhile).
+        // A ringing push for the drivers just offered (their app also polls every 5 s).
+        $this->notifications->newOffer($ride, $offered);
 
-        return $made;
+        return count($offered);
     }
 
     /**
@@ -151,9 +153,9 @@ class DriverMatchingService
         if (! $won) {
             throw $this->gone($ride->refresh());
         }
-        // "Driver accepted" push to the passenger: Phase 13 (the passenger app polls meanwhile).
+        $this->notifications->rideAccepted($ride->refresh());
 
-        return $ride->refresh();
+        return $ride;
     }
 
     /** POST /rides/{id}/decline ("Laktawan"): recorded, and the next nearest driver is offered (E.5 #6). */

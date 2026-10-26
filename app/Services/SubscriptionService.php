@@ -32,6 +32,7 @@ class SubscriptionService
         private readonly SettingsService $settings,
         private readonly PaymentGateway $gateway,
         private readonly AuditService $audit,
+        private readonly NotificationService $notifications,
     ) {}
 
     // ---------------------------------------------------------------- read side (Phase 5)
@@ -221,6 +222,7 @@ class SubscriptionService
         }
         if ($result->expired) {
             $this->closeUnpaid($subscription, 'checkout_expired', alreadyExpired: true);
+            $this->notifications->paymentProblem($subscription, 'payment_expired'); // in the list, no push
         }
 
         return $subscription->refresh();
@@ -257,13 +259,15 @@ class SubscriptionService
         ?User $actor = null,
         ?string $reason = null,
     ): Subscription {
-        return DB::transaction(function () use ($transaction, $payment, $via, $actor, $reason) {
+        // The transaction says what happened (activated / rejected / nothing); the user is told
+        // only after it is committed, so a notification never announces a rolled-back payment.
+        [$subscription, $outcome] = DB::transaction(function () use ($transaction, $payment, $via, $actor, $reason) {
             // Row locks: two deliveries at the same moment wait for each other here.
             $tx = SubscriptionTransaction::lockForUpdate()->findOrFail($transaction->id);
             $subscription = Subscription::with('plan')->lockForUpdate()->findOrFail($tx->subscription_id);
 
             if ($tx->status === TransactionStatus::Paid) {
-                return $subscription; // already done: nothing changes the second time
+                return [$subscription, null]; // already done: nothing changes the second time
             }
 
             // Guarantee #3: the amount actually paid must be exactly what we asked for.
@@ -279,7 +283,7 @@ class SubscriptionService
                 ]);
                 Log::warning('Payment amount mismatch', ['transaction_id' => $tx->id]);
 
-                return $subscription;
+                return [$subscription, 'payment_rejected'];
             }
 
             // Renewal timing (§ F.1): start where the paid time already ends, so no paid day is lost.
@@ -313,10 +317,17 @@ class SubscriptionService
                 'ends_at' => $subscription->ends_at->toIso8601ZuluString(),
                 'reason' => $reason,
             ]));
-            // "Your subscription is active" notification: Phase 13.
 
-            return $subscription;
+            return [$subscription, 'subscription_activated'];
         });
+
+        match ($outcome) {
+            'subscription_activated' => $this->notifications->subscriptionActivated($subscription),
+            'payment_rejected' => $this->notifications->paymentProblem($subscription, 'payment_rejected'),
+            default => null,
+        };
+
+        return $subscription;
     }
 
     /** Demo fallback (guarantee #6): an admin activates an unpaid subscription by hand, with a reason. */

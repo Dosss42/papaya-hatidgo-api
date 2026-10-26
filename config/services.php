@@ -36,6 +36,12 @@ return [
         'base_url' => env('PAYMONGO_BASE_URL', 'https://api.paymongo.com/v1'),
     ],
 
+    // Push notifications (Phase 13): the PATH to the Firebase service-account JSON file, kept
+    // outside the repository. Empty = pushes are skipped (the in-app list still works).
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

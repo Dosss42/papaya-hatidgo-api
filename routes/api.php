@@ -16,12 +16,14 @@ use App\Http\Controllers\Api\V1\Admin\SystemSettingController;
 use App\Http\Controllers\Api\V1\Admin\TransactionController;
 use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\DriverAvailabilityController;
 use App\Http\Controllers\Api\V1\DriverDocumentController;
 use App\Http\Controllers\Api\V1\DriverRequirementController;
 use App\Http\Controllers\Api\V1\DriverRideController;
 use App\Http\Controllers\Api\V1\FareController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PayMongoWebhookController;
 use App\Http\Controllers\Api\V1\RideController;
@@ -83,6 +85,15 @@ Route::prefix('v1')->group(function () {
     });
 
     // Rides (Phase 9, phase-9-rides.md). {ride} lookups are scoped to the caller's own rides.
+    // Notifications (Phase 13): every logged-in user's own Alerts list and push registration.
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'read'])->whereUuid('id');
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('/device-tokens', [DeviceTokenController::class, 'store'])->middleware('throttle:60,1');
+    });
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/ride-types', [FareController::class, 'rideTypes']);
 

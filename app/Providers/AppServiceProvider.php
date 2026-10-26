@@ -16,6 +16,7 @@ use App\Models\Vehicle;
 use App\Payments\FakeGateway;
 use App\Payments\PaymentGateway;
 use App\Payments\PayMongoGateway;
+use App\Push\FcmClient;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -55,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
 
             throw new RuntimeException("Unknown PAYMENT_GATEWAY: {$gateway}");
         });
+
+        // Push notifications (Phase 13). One per process, so the key file is read once.
+        $this->app->singleton(FcmClient::class, fn () => new FcmClient(config('services.fcm.credentials')));
     }
 
     /**

@@ -16,13 +16,14 @@ use Illuminate\Support\Facades\DB;
  * An admin's decision on one submitted document (phase-0 § D.4).
  * Each decision = one review row (what + why + who) + one audit_logs row + recalculate().
  * Only a PENDING document can be decided; a decision is final (a new upload starts a new review).
- * Telling the driver by notification comes with Phase 13; until then the checklist shows it.
+ * The driver is told by notification (Phase 13), and the checklist shows it too.
  */
 class DocumentReviewService
 {
     public function __construct(
         private readonly DriverComplianceService $compliance,
         private readonly AuditService $audit,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -104,6 +105,7 @@ class DocumentReviewService
         });
 
         $this->compliance->recalculate($document->driver);
+        $this->notifications->documentDecided($document, $action, $reason); // the driver reads the reason
 
         return $document->refresh()->load(['requirement', 'files', 'reviews.reviewer', 'driver.user', 'vehicle']);
     }

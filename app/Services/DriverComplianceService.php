@@ -25,7 +25,10 @@ use Illuminate\Support\Facades\DB;
  */
 class DriverComplianceService
 {
-    public function __construct(private readonly SubscriptionService $subscriptions) {}
+    public function __construct(
+        private readonly SubscriptionService $subscriptions,
+        private readonly NotificationService $notifications,
+    ) {}
 
     /**
      * Re-derive the driver's status from their documents and save it.
@@ -33,7 +36,8 @@ class DriverComplianceService
      */
     public function recalculate(Driver $driver): ComplianceStatus
     {
-        return DB::transaction(function () use ($driver) {
+        $setOffline = false;
+        $status = DB::transaction(function () use ($driver, &$setOffline) {
             $driver->refresh()->load('activeVehicle');
             $vehicle = $driver->activeVehicle;
             $states = $this->requirementStates($driver);
@@ -46,8 +50,8 @@ class DriverComplianceService
             $driver->compliance_status = $status;
 
             // A driver who stops being verified can't stay online (phase-0 § D.3 side effect).
-            // The "you were set offline" notification arrives with Phase 13.
             if ($status !== ComplianceStatus::Verified) {
+                $setOffline = $driver->is_online;
                 $driver->is_online = false;
             }
 
@@ -55,6 +59,12 @@ class DriverComplianceService
 
             return $status;
         });
+
+        if ($setOffline) {
+            $this->notifications->driverSetOffline($driver, 'papers'); // "You were set offline" (§ J #10)
+        }
+
+        return $status;
     }
 
     /**
