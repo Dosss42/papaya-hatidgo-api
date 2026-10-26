@@ -60,6 +60,7 @@ class LiveMapController extends Controller
                 'plate_number' => $r->vehicle?->plate_number,
                 'pickup' => ['lat' => (float) $r->pickup_lat, 'lng' => (float) $r->pickup_lng, 'landmark' => $r->pickup_landmark],
                 'destination' => ['lat' => (float) $r->destination_lat, 'lng' => (float) $r->destination_lng, 'landmark' => $r->destination_landmark],
+                'route' => $r->route_points, // the road the fare used (after Phase 13); null on older rides
                 'estimated_total' => $r->estimated_total,
                 'requested_at' => $r->requested_at?->toIso8601ZuluString(),
             ])->values(),
