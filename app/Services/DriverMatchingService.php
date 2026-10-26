@@ -192,7 +192,8 @@ class DriverMatchingService
             })
             ->filter(fn (RideRequest $ride) => $ride->distance_km <= $reachKm)
             ->sortBy('distance_km')
-            ->take(20)
+            // ALL of them (the student: "show all bookings, even far"). Requests only live a
+            // couple of minutes, so even a busy town's list stays short.
             ->values();
     }
 
