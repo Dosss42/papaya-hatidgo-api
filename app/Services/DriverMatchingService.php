@@ -163,7 +163,8 @@ class DriverMatchingService
 
     /**
      * The request board (the student's hybrid dispatch): open requests within
-     * matching.board_radius_km (default 5) of an online, located driver, nearest first, so the
+     * matching.board_radius_km of an online, located driver (0 = the whole service area, the
+     * default), nearest first, so the
      * driver can CHOOSE a ride. The nearest drivers still get the ringing alert (dispatch()).
      * Requests this driver already answered (skipped or missed) are left out, and so are the ones
      * offered to them (those come with the alert).
@@ -233,9 +234,16 @@ class DriverMatchingService
             && ! $driver->rideRequests()->whereIn('status', RideRequest::ACTIVE_STATUSES)->exists();
     }
 
+    /**
+     * How far the board reaches. 0 (the default since the student's test in town): no limit,
+     * every online driver in the service area sees every booking, nearest first. Bookings can
+     * only be made inside the service area, so that is the board's real edge.
+     */
     private function boardReachKm(): float
     {
-        return (float) $this->settings->get('matching.board_radius_km', 5);
+        $km = (float) $this->settings->get('matching.board_radius_km', 0);
+
+        return $km > 0 ? $km : INF;
     }
 
     /** POST /rides/{id}/decline ("Laktawan"): recorded, and the next nearest driver is offered (E.5 #6). */

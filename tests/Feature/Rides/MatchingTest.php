@@ -118,7 +118,9 @@ class MatchingTest extends TestCase
 
     public function test_a_ride_beyond_the_request_board_cannot_be_accepted(): void
     {
-        // Within 5 km a driver may choose it from the request board (RequestBoardTest); beyond, never.
+        // With the board limited to 5 km by the admin: within it a driver may choose it
+        // (RequestBoardTest); beyond, never. (By default the board covers the whole area.)
+        $this->setting('matching.board_radius_km', '5');
         $this->driver(self::LAT + 0.001);
         $ride = $this->bookId($this->passenger());
         $stranger = $this->driver(self::LAT + 0.06); // ~6.7 km: beyond the alert AND the board

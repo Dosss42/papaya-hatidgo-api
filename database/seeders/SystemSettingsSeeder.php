@@ -20,7 +20,7 @@ class SystemSettingsSeeder extends Seeder
 
             // Matching (phase-0 § E.5, driver-home brief)
             ['matching.radius_km', '3', 'decimal', 'Max distance from pickup to an eligible driver'],
-            ['matching.board_radius_km', '5', 'decimal', 'Drivers see open requests within this distance and may choose one (the request board)'],
+            ['matching.board_radius_km', '0', 'decimal', 'Drivers see open requests within this distance and may choose one (the request board); 0 = the whole service area'],
             ['matching.max_offers', '5', 'int', 'How many nearest eligible drivers receive a request'],
             ['matching.request_timeout_seconds', '120', 'int', 'Unaccepted requests are cancelled after this'],
             ['matching.stale_online_minutes', '3', 'int', 'A driver counts as online only if located within this many minutes'],

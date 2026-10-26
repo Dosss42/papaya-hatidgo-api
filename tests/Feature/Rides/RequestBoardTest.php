@@ -57,8 +57,20 @@ class RequestBoardTest extends TestCase
         $this->assertSame([], $this->board()); // taken: gone from everyone's board
     }
 
-    public function test_requests_beyond_the_board_reach_are_neither_shown_nor_accepted(): void
+    public function test_by_default_every_driver_in_the_service_area_sees_every_booking(): void
     {
+        // The student's test in town: a driver at the edge, ~7.8 km from a booking in the center.
+        $edge = $this->driver(self::LAT + 0.07);
+        $ride = $this->bookId($this->passenger());
+
+        Sanctum::actingAs($edge);
+        $this->assertSame([$ride], array_column($this->board(), 'ride_id'));
+        $this->as($edge, $ride, 'accept')->assertOk();
+    }
+
+    public function test_when_the_admin_sets_a_reach_requests_beyond_it_are_neither_shown_nor_accepted(): void
+    {
+        $this->setting('matching.board_radius_km', '5');
         $far = $this->driver(self::LAT - 0.06); // ~6.7 km
         $ride = $this->bookId($this->passenger());
 
