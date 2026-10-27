@@ -3,12 +3,10 @@
 use App\Http\Controllers\PaymentPageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-// The app's download page and user manual (static files in public/download/). The address in
-// the QR code is the APK next to it; this only makes "/download" open the page.
+// The app's download page and user manual (static files in public/download/). The home address
+// opens it too, so the server's plain address shows something useful (the API needs no Vite page).
+// To the file itself: Laravel ignores a trailing slash, so "/download/" would match this route again.
+Route::redirect('/', '/download/index.html');
 Route::redirect('/download', '/download/index.html');
 
 // Payment pages a BROWSER opens (Phase 8). The API itself is in routes/api.php.

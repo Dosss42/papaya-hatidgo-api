@@ -2,18 +2,15 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
+    /** The server's plain address opens the download page and user manual (public/download/). */
+    public function test_the_home_address_opens_the_download_page(): void
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        $this->get('/')->assertRedirect('/download/index.html');
+        $this->get('/download')->assertRedirect('/download/index.html');
+        $this->assertFileExists(public_path('download/index.html'));
     }
 }
