@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papaya HatidGo App</title>
+<meta name="description" content="Download the Papaya HatidGo Android app and learn how to use it as a passenger or a tricycle driver.">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* The app's own colors (DESIGN.md). */
+  :root {
+    --ground: #ffffff;
+    --surface: #f7f3ee;
+    --line: #d8cfc6;
+    --papaya: #c2410c;
+    --papaya-pressed: #9a3412;
+    --tint: #fff1e6;
+    --bright: #f57c00;
+    --leaf: #2e7d32;
+    --leaf-tint: #e8f5e9;
+    --ink: #1c1714;
+    --ink-soft: #5a4f47;
+    --alert: #b42318;
+    --alert-ground: #fef0ee;
+    --frame: #1c1714;
+    --on-papaya: #ffffff;
+    --radius: 14px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #171310;
+      --surface: #221c18;
+      --line: #3b322c;
+      --papaya: #ff8a4c;
+      --papaya-pressed: #ffa774;
+      --tint: #2d1f16;
+      --leaf: #7bc47f;
+      --leaf-tint: #1b2a1c;
+      --ink: #f6f0ea;
+      --ink-soft: #c4b8ae;
+      --alert: #ff8a80;
+      --alert-ground: #2e1715;
+      --frame: #3b322c;
+      --on-papaya: #1c1714;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #171310; --surface: #221c18; --line: #3b322c; --papaya: #ff8a4c; --papaya-pressed: #ffa774;
+    --tint: #2d1f16; --leaf: #7bc47f; --leaf-tint: #1b2a1c; --ink: #f6f0ea; --ink-soft: #c4b8ae;
+    --alert: #ff8a80; --alert-ground: #2e1715; --frame: #3b322c; --on-papaya: #1c1714; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 400 1.0625rem/1.6 'Atkinson Hyperlegible Next', Roboto, system-ui, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: var(--papaya); text-underline-offset: 3px; }
+  a:hover { color: var(--papaya-pressed); }
+  :focus-visible { outline: 3px solid var(--papaya); outline-offset: 3px; border-radius: 6px; }
+  h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; font-weight: 800; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.75rem, 5vw, 2.4rem); }
+  h3 { font-size: 1.35rem; margin-top: 0; }
+  h4 { font-size: 1.05rem; }
+  p { margin: 0 0 1em; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+  /* ---------------------------------------------------------- top bar */
+  .top {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top .wrap { display: flex; align-items: center; gap: 16px; min-height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 1.15rem; color: var(--ink); }
+  .brand svg { width: 40px; height: auto; }
+  .brand .papaya { color: var(--papaya); }
+  .brand .go { color: var(--leaf); }
+  .top nav { margin-left: auto; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .top nav::-webkit-scrollbar { display: none; }
+  .top nav a {
+    color: var(--ink-soft); text-decoration: none; font-weight: 700; font-size: .95rem;
+    padding: 8px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .top nav a:hover { background: var(--surface); color: var(--ink); }
+  @media (max-width: 720px) {
+    .top .wrap { flex-wrap: wrap; gap: 0; padding-top: 6px; }
+    .top nav { margin-left: -10px; width: calc(100% + 10px); padding-bottom: 6px; }
+  }
+
+  /* ---------------------------------------------------------- hero + download */
+  .hero { background: var(--tint); border-bottom: 1px solid var(--line); }
+  .hero .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 56px; }
+  .hero h1 { font-size: clamp(2.2rem, 7vw, 3.4rem); margin-bottom: .3em; }
+  .hero h1 .papaya { color: var(--papaya); }
+  .hero h1 .go { color: var(--leaf); }
+  .hero .lead { font-size: 1.25rem; color: var(--ink-soft); max-width: 34ch; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; padding: 0; list-style: none; }
+  .facts li { background: var(--ground); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: .95rem; font-weight: 700; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 56px; padding: 0 28px; border-radius: var(--radius);
+    background: var(--papaya); color: var(--on-papaya); font: inherit; font-weight: 800; font-size: 1.1rem;
+    text-decoration: none; border: 0; cursor: pointer;
+  }
+  .btn:hover { background: var(--papaya-pressed); color: var(--on-papaya); }
+  .btn[aria-disabled="true"] { background: var(--line); color: var(--ink-soft); pointer-events: none; }
+  .btn svg { width: 22px; height: 22px; flex: none; }
+  .btn-outline { background: transparent; color: var(--papaya); border: 2px solid var(--papaya); min-height: 48px; font-size: 1rem; padding: 0 20px; }
+  .btn-outline:hover { background: var(--ground); color: var(--papaya-pressed); }
+  .apk-meta { margin-top: 10px; color: var(--ink-soft); font-size: .95rem; }
+
+  .qr-card {
+    background: var(--ground); border: 1px solid var(--line); border-radius: 22px;
+    padding: 28px; text-align: center; box-shadow: 0 12px 32px -18px rgb(28 23 20 / .35);
+    max-width: 380px; justify-self: center; width: 100%;
+  }
+  .qr-card h2 { font-size: 1.35rem; margin-bottom: 4px; }
+  .qr-card p { color: var(--ink-soft); font-size: .98rem; }
+  .qr {
+    width: 232px; height: 232px; margin: 16px auto; padding: 8px; background: #fff; border-radius: 12px;
+    display: grid; place-items: center; border: 1px solid #d8cfc6;
+  }
+  .qr img, .qr canvas { width: 216px !important; height: 216px !important; image-rendering: pixelated; }
+  .qr-link { font-size: .85rem; word-break: break-all; color: var(--ink-soft); }
+  .qr-actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .note {
+    display: flex; gap: 10px; align-items: flex-start; text-align: left;
+    background: var(--surface); border-left: 4px solid var(--bright); border-radius: 10px;
+    padding: 10px 14px; margin: 12px 0 0; font-size: .95rem; color: var(--ink);
+  }
+  .note.warn { background: var(--alert-ground); border-color: var(--alert); }
+  .note.ok { background: var(--leaf-tint); border-color: var(--leaf); }
+  @media (max-width: 860px) {
+    .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 32px; padding-bottom: 40px; }
+  }
+
+  /* ---------------------------------------------------------- sections */
+  section.block { padding: 64px 0; border-bottom: 1px solid var(--line); }
+  section.block:nth-of-type(even) { background: var(--surface); }
+  .kicker { display: inline-block; font-weight: 800; color: var(--papaya); text-transform: uppercase; letter-spacing: .08em; font-size: .85rem; margin-bottom: 8px; }
+  .intro { color: var(--ink-soft); font-size: 1.15rem; max-width: 62ch; margin-bottom: 36px; }
+
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .steps > li { counter-increment: step; position: relative; padding-left: 48px; }
+  .steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: -2px;
+    width: 32px; height: 32px; border-radius: 50%; background: var(--papaya); color: var(--on-papaya);
+    display: grid; place-items: center; font-weight: 800; font-size: .95rem;
+  }
+  .steps strong, .ui { font-weight: 800; }
+  .ui { background: var(--tint); border-radius: 6px; padding: 0 6px; white-space: nowrap; }
+
+  /* A guide row: words on one side, phone screens on the other. */
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: start; margin: 0 0 56px; }
+  .row:last-child { margin-bottom: 0; }
+  .row.flip { grid-template-columns: auto minmax(0, 1fr); }
+  .row.flip .shots { order: -1; }
+  /* Three screens: they go under the words, so the words keep a readable width. */
+  .row.wide, .row.wide.flip { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .row.wide > div:first-child { max-width: 760px; }
+  .row.wide .shots { order: 0; justify-content: flex-start; }
+  .row h4 { margin-top: 1.4em; }
+  .shots { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  figure { margin: 0; }
+  .phone {
+    width: 210px; border: 6px solid var(--frame); border-radius: 30px; overflow: hidden;
+    background: #fff; box-shadow: 0 16px 30px -20px rgb(28 23 20 / .55);
+  }
+  .phone img { width: 100%; height: auto; aspect-ratio: 390 / 844; object-fit: cover; object-position: top; }
+  .phone.short img { aspect-ratio: 390 / 560; }
+  figcaption { text-align: center; font-size: .88rem; color: var(--ink-soft); margin-top: 8px; max-width: 210px; }
+  @media (max-width: 860px) {
+    .row, .row.flip { grid-template-columns: 1fr; gap: 24px; }
+    .row.flip .shots { order: 0; }
+    .phone, figcaption { width: 168px; max-width: 168px; }
+    .shots { gap: 12px; }
+  }
+  @media (max-width: 380px) {
+    .phone, figcaption { width: 140px; max-width: 140px; }
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 16px; margin: 24px 0; }
+  .card { background: var(--ground); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  section.block:nth-of-type(odd) .card { background: var(--surface); }
+  .card h4 { margin-bottom: 6px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: .98rem; background: var(--ground); }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--tint); font-weight: 800; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; font-weight: 700; }
+
+  .admin-shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 20px; margin-top: 24px; }
+  .admin-shots > *, .cards > * { min-width: 0; }
+  .browser { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--ground); box-shadow: 0 12px 26px -20px rgb(28 23 20 / .5); }
+  .browser::before { content: '● ● ●'; display: block; padding: 6px 12px; font-size: .6rem; letter-spacing: 2px; color: var(--ink-soft); background: var(--surface); border-bottom: 1px solid var(--line); }
+  .browser img { width: 100%; height: auto; aspect-ratio: 1440 / 1000; object-fit: cover; object-position: top left; }
+  .browser figcaption { max-width: none; width: auto; padding: 8px 12px 12px; text-align: left; }
+
+  details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--ground); margin-bottom: 10px; }
+  summary { cursor: pointer; padding: 16px 18px; font-weight: 800; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; color: var(--papaya); font-size: 1.4rem; line-height: 1; }
+  details[open] summary::after { content: '–'; }
+  details > div { padding: 0 18px 16px; color: var(--ink-soft); }
+  details > div p:last-child { margin-bottom: 0; }
+
+  footer { padding: 40px 0 56px; color: var(--ink-soft); font-size: .95rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+  .theme-toggle { background: none; border: 1px solid var(--line); color: var(--ink-soft); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: .9rem; cursor: pointer; }
+
+  /* Printing gives one clean page with the QR code (for posting on a board). */
+  @media print {
+    .top, section.block, footer, .hero .text, .qr-actions, .note { display: none !important; }
+    .hero { background: #fff; border: 0; }
+    .hero .wrap { display: block; padding: 0; }
+    .qr-card { box-shadow: none; border: 2px solid #000; margin: 40px auto; max-width: 460px; }
+    .qr { width: 320px; height: 320px; }
+    .qr img, .qr canvas { width: 300px !important; height: 300px !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Papaya HatidGo, back to the top">
+      <svg viewBox="0 -4 128 104" aria-hidden="true">
+        <path d="M46 24 C44 11 51 0 66 -4 C67 11 59 21 46 24 Z" fill="#2e7d32" transform="translate(0 4)"/>
+        <path d="M46 24 C37 22 27 18 22 7 C35 4 44 11 46 24 Z" fill="#4caf50" transform="translate(0 4)"/>
+        <rect x="8" y="26" width="98" height="9" rx="4.5" fill="#c2410c"/>
+        <path d="M84 35 V48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+        <path d="M15 35 H73 V64 A10 10 0 0 1 63 74 H25 A10 10 0 0 1 15 64 Z" fill="#f57c00"/>
+        <rect x="23" y="42" width="32" height="17" rx="4" fill="#ffffff"/>
+        <path d="M73 52 H92 A12 12 0 0 1 104 64 V70 H73 Z" fill="#c2410c"/>
+        <path d="M100 42 L108 80" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+        <path d="M95 41 H106" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="32" cy="82" r="13" fill="currentColor"/><circle cx="32" cy="82" r="5" fill="#f57c00"/>
+        <circle cx="108" cy="82" r="13" fill="currentColor"/><circle cx="108" cy="82" r="5" fill="#f57c00"/>
+      </svg>
+      <span><span class="papaya">Papaya</span> <span class="go">HatidGo</span></span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#install">Install</a>
+      <a href="#start">Getting started</a>
+      <a href="#passenger">Passenger</a>
+      <a href="#driver">Driver</a>
+      <a href="#admin">Admin</a>
+      <a href="#help">Help</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ====================================================== download -->
+  <div class="hero">
+    <div class="wrap">
+      <div class="text">
+        <h1><span class="papaya">Papaya</span> <span class="go">HatidGo</span></h1>
+        <p class="lead">Tricycle rides in Papaya, one tap away. Book a tricycle from your phone, or drive one and get passengers near you.</p>
+        <ul class="facts">
+          <li>Android 7.0 or newer</li>
+          <li>For passengers and drivers</li>
+          <li>English or Taglish</li>
+          <li>Pay the driver in cash</li>
+        </ul>
+        <a class="btn" id="apk-button" href="papaya-hatidgo.apk" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <span id="apk-label">Download the app (APK)</span>
+        </a>
+        <p class="apk-meta" id="apk-meta">Version 1.0 · Android app file (.apk)</p>
+      </div>
+
+      <aside class="qr-card" aria-labelledby="qr-title">
+        <h2 id="qr-title">Scan to download</h2>
+        <p>Open your phone's camera and point it at the code.</p>
+        <div class="qr" id="qr" role="img" aria-label="QR code that downloads the Papaya HatidGo app"></div>
+        <p class="qr-link" id="qr-link"></p>
+        <div class="qr-actions">
+          <button type="button" class="btn btn-outline" onclick="window.print()">Print the QR code</button>
+        </div>
+        <p class="note warn" id="qr-local" hidden>
+          <span aria-hidden="true">!</span>
+          <span>This page is open from <strong>this computer</strong>, so the code points here and phones can't reach it. Open the page from its online address, or from this computer's Wi-Fi address (for example <code>http://192.168.1.5:8000/download/</code>), and the code will follow.</span>
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ====================================================== install -->
+  <section class="block" id="install" aria-labelledby="install-h">
+    <div class="wrap">
+      <span class="kicker">Step 1</span>
+      <h2 id="install-h">Install the app</h2>
+      <p class="intro">Papaya HatidGo isn't on the Play Store yet, so you install it from this page. It takes about a minute.</p>
+
+      <div class="row">
+        <div>
+          <ol class="steps">
+            <li><strong>Download the APK.</strong> Scan the QR code above, or tap <span class="ui">Download the app (APK)</span> on your phone.</li>
+            <li><strong>Open the file.</strong> When the download finishes, tap it in the notification, or find <em>papaya-hatidgo.apk</em> in your <em>Downloads</em> folder.</li>
+            <li><strong>Allow the install.</strong> If Android says the browser can't install unknown apps, tap <span class="ui">Settings</span>, turn on <span class="ui">Allow from this source</span>, then go back.</li>
+            <li><strong>Tap <span class="ui">Install</span>.</strong> If Play Protect warns that it doesn't recognize the app, tap <span class="ui">More details</span> › <span class="ui">Install anyway</span>. That warning appears for every app that isn't from the Play Store.</li>
+            <li><strong>Open Papaya HatidGo.</strong> Its tricycle icon is now on your home screen.</li>
+          </ol>
+          <p class="note"><span aria-hidden="true">i</span><span>The app needs the internet to work. It asks for your <strong>location</strong> (so drivers can find you) and for <strong>notifications</strong> (so you hear about your ride when the app is closed).</span></p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/language.webp" alt="The first screen: the Papaya HatidGo logo and the choice between English and Taglish." loading="lazy" width="390" height="844"></div><figcaption>The first screen after installing</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== getting started -->
+  <section class="block" id="start" aria-labelledby="start-h">
+    <div class="wrap">
+      <span class="kicker">Step 2</span>
+      <h2 id="start-h">Getting started</h2>
+      <p class="intro">Choose your language, then create an account as a passenger or a driver. One account is one role.</p>
+
+      <div class="row">
+        <div>
+          <h3>Choose your language</h3>
+          <p>On the first screen, tap <span class="ui">English</span> or <span class="ui">Taglish</span> (Tagalog with English words). You can change it later in <span class="ui">Account</span> › <span class="ui">Language</span>.</p>
+          <h3>Create an account</h3>
+          <ol class="steps">
+            <li>Tap <span class="ui">Get Started</span>.</li>
+            <li>Under <strong>Who are you?</strong>, choose <span class="ui">Passenger</span> or <span class="ui">Driver</span>.</li>
+            <li>Enter your first and last name, mobile number, email and a password (8 or more characters, with a letter and a number).</li>
+            <li>Tap <span class="ui">Create account</span>. You're logged in right away.</li>
+          </ol>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/welcome.webp" alt="Get Started screen with the buttons Get Started and I already have an account." loading="lazy" width="390" height="844"></div><figcaption>Get Started</figcaption></figure>
+          <figure><div class="phone"><img src="img/register.webp" alt="Create an account: choose Passenger or Driver, then fill in name, mobile number and email." loading="lazy" width="390" height="844"></div><figcaption>Create an account</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div>
+          <h3>Log in</h3>
+          <p>Tap <span class="ui">I already have an account</span>, then enter your <strong>email or mobile number</strong> and your password.</p>
+          <h3>Forgot your password?</h3>
+          <ol class="steps">
+            <li>On Log in, tap <span class="ui">Forgot password?</span></li>
+            <li>Enter your account's email and tap <span class="ui">Send code</span>.</li>
+            <li>Type the 6-digit code from your email, choose a new password, and tap <span class="ui">Change password</span>.</li>
+          </ol>
+        </div>
+        <div class="shots">
+          <figure><div class="phone short"><img src="img/login.webp" alt="Log in screen with email or mobile number, password and the Log in button." loading="lazy" width="390" height="560"></div><figcaption>Log in</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== passenger -->
+  <section class="block" id="passenger" aria-labelledby="pax-h">
+    <div class="wrap">
+      <span class="kicker">For passengers</span>
+      <h2 id="pax-h">Booking a tricycle</h2>
+      <p class="intro">The app has four tabs at the bottom: <strong>Book</strong>, <strong>Rides</strong>, <strong>Alerts</strong> and <strong>Account</strong>. You pay the driver in cash when the ride ends.</p>
+
+      <div class="row">
+        <div>
+          <h3>First, subscribe</h3>
+          <p>Booking needs an active subscription. Tap <span class="ui">Subscribe</span> on the Book tab, or go to <span class="ui">Account</span> › <span class="ui">Subscription</span>.</p>
+          <ol class="steps">
+            <li>Choose a plan: 1 month, 6 months or 12 months. The longer plans include free months. The admin sets the prices.</li>
+            <li>Tap <span class="ui">Pay</span>. You pay on PayMongo's secure page with <strong>GCash, Maya or a card</strong>. Papaya HatidGo never sees your card or PIN.</li>
+            <li>Come back to the app. It shows <strong>Payment received!</strong> and the date your subscription runs until.</li>
+          </ol>
+          <p class="note"><span aria-hidden="true">i</span><span>While the project is in <strong>test mode</strong>, no real money is charged. You can <span class="ui">Renew early</span> at any time, and the new months start when the current ones end, so no paid day is lost.</span></p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/subscription.webp" alt="Subscription screen: active until a date, and plans of 1, 6 and 12 months with a Pay button." loading="lazy" width="390" height="844"></div><figcaption>Subscription</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div>
+          <h3>Book in three steps</h3>
+          <ol class="steps">
+            <li><strong>Pickup.</strong> The map starts at your location. Move the map so the pin sits where the driver should pick you up, or tap <span class="ui">Use my location</span>. You can also search a place, such as the public market or a school. The app names the spot for you, and you can add a landmark (for example <em>blue gate</em>). Tap <span class="ui">Pick me up here</span>.</li>
+            <li><strong>Destination.</strong> Move the map to where you're going, or search it. Tap <span class="ui">I'm going here</span>.</li>
+            <li><strong>Choose your ride.</strong> The fare for each ride type is shown. Pick one, then tap <span class="ui">Book · ₱…</span>.</li>
+          </ol>
+          <p class="note"><span aria-hidden="true">i</span><span>Rides are only inside the service area (Papaya). The fare is measured along the real roads, not in a straight line.</span></p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/book-pickup.webp" alt="Step 1 of 3: Where should we pick you up? A map with a pin, a search box, a landmark field and the button Pick me up here." loading="lazy" width="390" height="844"></div><figcaption>1 · Pickup</figcaption></figure>
+          <figure><div class="phone"><img src="img/book-destination.webp" alt="Step 2 of 3: Where are you going? The map shows the pickup and a line to the destination pin." loading="lazy" width="390" height="844"></div><figcaption>2 · Destination</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <h3>One-way or Balikan?</h3>
+          <div class="cards">
+            <div class="card"><h4>One-way</h4><p>Drop-off only. The driver takes you to your destination and the ride ends there.</p></div>
+            <div class="card"><h4>Balikan</h4><p>The driver waits for you, then brings you back to the pickup. Choose how long you'll stay: 15 min, 30 min, 1 hour, or <em>Not sure yet</em>.</p></div>
+          </div>
+          <p>Tap <span class="ui">See details</span> to see how the fare is made:</p>
+          <ul>
+            <li><strong>Base fare</strong> plus the <strong>distance</strong> (km × the rate per km). Short trips cost at least the minimum fare.</li>
+            <li>Balikan adds the <strong>way back</strong>, and a <strong>waiting fee</strong> if the admin has set one. The waiting rule is shown, for example <em>First 10 min free, then ₱2/min</em>. You're charged for the time you really wait.</li>
+            <li>A <strong>service fee</strong> appears only if the admin has set one.</li>
+          </ul>
+          <p>The fare shown is an <strong>estimate</strong>. You can add a message for the driver (for example <em>I have a big bag</em>) before booking.</p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/book-choose.webp" alt="Step 3: Choose your ride. One-way and Balikan cards with their fares, and wait-time chips: 15 min, 30 min, 1 hour, Not sure yet." loading="lazy" width="390" height="844"></div><figcaption>3 · Choose your ride</figcaption></figure>
+          <figure><div class="phone"><img src="img/book-details.webp" alt="Fare details: base fare, distance, way back, waiting fee with its rule, and the total." loading="lazy" width="390" height="844"></div><figcaption>The fare, in detail</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div>
+          <h3>During the ride</h3>
+          <p>After booking, the ride screen shows each stage with a progress bar:</p>
+          <ol class="steps">
+            <li><strong>Looking for a driver…</strong> Nearby drivers see your request. If nobody accepts in time, the app says <em>No driver is available right now</em>, and your booking is kept so you can try again.</li>
+            <li><strong>[Driver] is on the way.</strong> You see the driver's name, rating, tricycle color, <strong>body number and plate number</strong>, and how far away they are. Tap the phone button to call them.</li>
+            <li><strong>[Driver] is here.</strong> Look for the tricycle with that body number.</li>
+            <li><strong>You're on the way to your destination.</strong></li>
+          </ol>
+          <h4>Cancelling</h4>
+          <p>You can cancel while the app is looking for a driver, and after a driver accepts. Once the driver taps <em>I'm on my way</em>, you can't cancel right away. The app shows the time when you may cancel (10 minutes later, set by the admin) in case the driver hasn't arrived.</p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/ride-searching.webp" alt="Looking for a driver… with the pickup, destination and estimate." loading="lazy" width="390" height="844"></div><figcaption>Looking for a driver</figcaption></figure>
+          <figure><div class="phone"><img src="img/ride-arriving.webp" alt="Juan is on the way: the driver's card with tricycle, rating, body number and plate, a call button, and when you may cancel." loading="lazy" width="390" height="844"></div><figcaption>The driver is coming</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <h3>Balikan: waiting and coming back</h3>
+          <p>At your destination, the driver waits. The screen shows how long you said you'd stay and how many minutes have passed. When you're ready to go home, tap <span class="ui">I'm coming back</span> so the driver gets ready.</p>
+          <h3>Paying and rating</h3>
+          <p>When the ride ends, the app shows <strong>Pay [driver] ₱… (cash)</strong>. If the final fare is different from the estimate (for example, you waited less), both are shown. Then rate the ride from 1 to 5 stars, with an optional note, or tap <span class="ui">Later</span>.</p>
+          <h3>Rides and Alerts</h3>
+          <p><span class="ui">Rides</span> lists your rides, newest first, with the fare and status. You can rate a ride you skipped there. <span class="ui">Alerts</span> collects ride updates, payment news and reminders.</p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/ride-waiting.webp" alt="Juan is waiting for you: the time you said and the minutes so far, with the button I'm coming back." loading="lazy" width="390" height="844"></div><figcaption>Balikan: the driver waits</figcaption></figure>
+          <figure><div class="phone"><img src="img/ride-done.webp" alt="You've arrived! Pay Juan in cash, the estimate and final fare, and five stars to rate the ride." loading="lazy" width="390" height="844"></div><figcaption>Pay in cash, then rate</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row wide flip">
+        <div>
+          <h3>Your account</h3>
+          <p>The <span class="ui">Account</span> tab shows your name and number, the <strong>language</strong>, your <strong>subscription</strong>, and <span class="ui">Logout</span>.</p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/rides.webp" alt="Rides: a list of rides with date, route, fare and status (Completed or Cancelled)." loading="lazy" width="390" height="844"></div><figcaption>Rides</figcaption></figure>
+          <figure><div class="phone"><img src="img/alerts.webp" alt="Alerts: ride completed and subscription active messages, marked New." loading="lazy" width="390" height="844"></div><figcaption>Alerts</figcaption></figure>
+          <figure><div class="phone"><img src="img/account.webp" alt="Account: name, mobile number, email, language, subscription and Logout." loading="lazy" width="390" height="844"></div><figcaption>Account</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== driver -->
+  <section class="block" id="driver" aria-labelledby="drv-h">
+    <div class="wrap">
+      <span class="kicker">For tricycle drivers</span>
+      <h2 id="drv-h">Driving with Papaya HatidGo</h2>
+      <p class="intro">The driver app has five tabs: <strong>Home</strong>, <strong>Rides</strong>, <strong>Earnings</strong>, <strong>Alerts</strong> and <strong>Account</strong>. Before your first passenger, the admin checks your papers.</p>
+
+      <div class="row">
+        <div>
+          <h3>Get verified (one time)</h3>
+          <p>Home shows a checklist. Finish it in order:</p>
+          <ol class="steps">
+            <li><strong>Your tricycle.</strong> Enter the plate number and color (body number, brand and model are optional). Tap <span class="ui">Add tricycle</span>.</li>
+            <li><strong>Documents.</strong> Upload a clear photo (or PDF) of each: <em>Driver's license</em>, <em>Tricycle's OR/CR</em>, <em>Franchise / MTOP permit</em> and <em>Clearance</em>, with the expiry date. Make sure all four corners show, the text is clear, and there's no flash glare.</li>
+            <li><strong>Wait for the admin.</strong> Each document shows <em>Under review</em>, then <em>Approved</em> or <em>Needs fixing</em> with the admin's reason. Fix it and upload again.</li>
+            <li><strong>Subscribe.</strong> Once you're verified, choose a plan and pay, just like passengers.</li>
+          </ol>
+          <p class="note"><span aria-hidden="true">i</span><span>Only the Papaya HatidGo admin can see your documents. When a document is close to expiring, the app reminds you. Upload the new copy early, and the old one keeps counting until it's approved.</span></p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/documents.webp" alt="Documents: Driver's license, Tricycle's OR/CR, Franchise / MTOP permit and Clearance, each Approved with a valid-until date." loading="lazy" width="390" height="844"></div><figcaption>Documents</figcaption></figure>
+          <figure><div class="phone"><img src="img/tricycle.webp" alt="Your tricycle: Approved, with plate number, color, body number, brand and model." loading="lazy" width="390" height="844"></div><figcaption>Your tricycle</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row wide flip">
+        <div>
+          <h3>Go online and choose passengers</h3>
+          <ol class="steps">
+            <li>On Home, tap <span class="ui">Go online</span> and allow your location.</li>
+            <li><strong>Requests near you</strong> lists every open booking in town, <strong>nearest first</strong>: the pickup, how far it is from you, the trip length, the fare, and One-way or Balikan.</li>
+            <li>Tap a request to see the details (and the passenger's message), then tap <span class="ui">Accept</span> or <span class="ui">Skip</span>. If another driver took it first, the app tells you.</li>
+          </ol>
+          <h4>Auto-accept</h4>
+          <p>Tap <span class="ui">Auto-accept</span> and choose a distance from 2 to 5 km. A request whose pickup is that close is accepted for you, and the ride opens. Choose <em>Off: I choose myself</em> to stop it.</p>
+          <p class="note"><span aria-hidden="true">i</span><span>While you're online, the screen stays on and a sound plays for new requests, so turn the volume up and keep the phone charged. Tap <span class="ui">Go offline</span> when you stop driving.</span></p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/driver-offline.webp" alt="You're offline. Today's earnings and the Go online button." loading="lazy" width="390" height="844"></div><figcaption>Offline</figcaption></figure>
+          <figure><div class="phone"><img src="img/driver-board.webp" alt="You're online: a map, the Auto-accept row (Off), and Requests near you with one Balikan request." loading="lazy" width="390" height="844"></div><figcaption>Requests near you</figcaption></figure>
+          <figure><div class="phone"><img src="img/driver-request.webp" alt="New passenger! Balikan, wait 30 min, the fare, pickup 0.4 km from you and the trip length, with Skip and Accept." loading="lazy" width="390" height="844"></div><figcaption>A request: Accept or Skip</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row wide">
+        <div>
+          <h3>The ride, one button at a time</h3>
+          <p>The big button at the bottom always shows the next step. Tap it as each one happens:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Button</th><th scope="col">When</th></tr></thead>
+              <tbody>
+                <tr><td>I'm on my way</td><td>You start driving to the pickup. The passenger sees you coming.</td></tr>
+                <tr><td>I'm here</td><td>You're at the pickup.</td></tr>
+                <tr><td>Start the trip</td><td>The passenger is on board.</td></tr>
+                <tr><td>We're at the destination</td><td>Balikan only: you've arrived, and you now wait.</td></tr>
+                <tr><td>We're heading back</td><td>Balikan only: the passenger is back on board.</td></tr>
+                <tr><td>Finish the ride</td><td>Drop-off done. The app shows the cash to collect.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Use <span class="ui">Directions</span> to open Google Maps to the pickup or drop-off, and the phone button to call the passenger.</p>
+          <h4>Balikan waiting</h4>
+          <p>The screen shows how long the passenger said they'd stay and the minutes so far. When they tap <em>I'm coming back</em>, you see <strong>[Passenger] is coming back!</strong> If they never return, tap <span class="ui">The passenger didn't come back</span>: they pay for the trip there and the waiting, not the way back.</p>
+          <h4>Cancelling</h4>
+          <p>Tap <span class="ui">Cancel</span> and choose a reason: tricycle problem, can't find the passenger, the passenger didn't show up, or another reason.</p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/driver-accepted.webp" alt="Pick up Maria: pickup with a Directions button, the passenger card with a call button, and I'm on my way." loading="lazy" width="390" height="844"></div><figcaption>Pick up the passenger</figcaption></figure>
+          <figure><div class="phone"><img src="img/driver-passenger-returning.webp" alt="Waiting for Maria, with the notice Maria is coming back! and the button We're heading back." loading="lazy" width="390" height="844"></div><figcaption>Balikan: coming back</figcaption></figure>
+          <figure><div class="phone"><img src="img/driver-finished.webp" alt="Ride finished! Collect the fare in cash, the estimate and final fare, and Back to Home." loading="lazy" width="390" height="844"></div><figcaption>Collect the cash</figcaption></figure>
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div>
+          <h3>Earnings</h3>
+          <p>The <span class="ui">Earnings</span> tab adds up the cash from your finished rides for <strong>Today</strong>, <strong>This week</strong> and <strong>This month</strong>, with the list of rides. Home also shows today's total.</p>
+          <h3>Taken offline?</h3>
+          <p>The app takes you offline if your subscription ends, a document expires or needs fixing, your account is suspended, or your location stops arriving for a while. Home tells you why and links to the fix.</p>
+        </div>
+        <div class="shots">
+          <figure><div class="phone"><img src="img/earnings.webp" alt="Earnings: Today, This week, This month; the total and the finished rides." loading="lazy" width="390" height="844"></div><figcaption>Earnings</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== admin -->
+  <section class="block" id="admin" aria-labelledby="admin-h">
+    <div class="wrap">
+      <span class="kicker">For the administrator</span>
+      <h2 id="admin-h">The admin website</h2>
+      <p class="intro">Papaya HatidGo is run from a separate website on a computer, for the admin only. Admin accounts can't log in to the phone app.</p>
+      <div class="cards">
+        <div class="card"><h4>Dashboard</h4><p>Today's rides, fares, drivers online and active subscriptions.</p></div>
+        <div class="card"><h4>Users and verification</h4><p>Review each driver's documents and tricycle, then approve, reject with a reason, or ask for a fix. Suspend or reactivate accounts.</p></div>
+        <div class="card"><h4>Rides and live map</h4><p>See online drivers and active rides on a map, along the roads they take.</p></div>
+        <div class="card"><h4>Fares and settings</h4><p>Set the base fare, rate per km, minimum fare, Balikan way back and waiting fee, and the service fee. Switch ride types on or off, and set the service area and the matching rules.</p></div>
+        <div class="card"><h4>Plans, reports and audit log</h4><p>Edit subscription plans, read ride and income reports, and see who changed what.</p></div>
+      </div>
+      <div class="admin-shots">
+        <figure class="browser"><img src="img/admin-dashboard.webp" alt="Admin dashboard with today's numbers." loading="lazy" width="1440" height="1000"><figcaption>Dashboard</figcaption></figure>
+        <figure class="browser"><img src="img/admin-users.webp" alt="Admin users list with roles and statuses." loading="lazy" width="1440" height="1000"><figcaption>Users</figcaption></figure>
+        <figure class="browser"><img src="img/admin-rides.webp" alt="Admin rides page with the live map." loading="lazy" width="1440" height="1000"><figcaption>Rides and live map</figcaption></figure>
+        <figure class="browser"><img src="img/admin-fares.webp" alt="Admin fares and settings page." loading="lazy" width="1440" height="1000"><figcaption>Fares and settings</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== help -->
+  <section class="block" id="help" aria-labelledby="help-h">
+    <div class="wrap">
+      <span class="kicker">Help</span>
+      <h2 id="help-h">Questions and fixes</h2>
+      <details>
+        <summary>The phone won't install the APK.</summary>
+        <div><p>Allow your browser (or Files app) to install unknown apps: phone <em>Settings › Apps › [your browser] › Install unknown apps</em>. If an older Papaya HatidGo is installed and the install fails, uninstall it first, then install again.</p></div>
+      </details>
+      <details>
+        <summary>The app says "No internet, or the server can't be reached."</summary>
+        <div><p>Check that mobile data or Wi-Fi is on, then tap <em>Try again</em>. If it still fails, the Papaya HatidGo server may be offline for a moment.</p></div>
+      </details>
+      <details>
+        <summary>The map doesn't find my location.</summary>
+        <div><p>Turn on GPS (Location) and allow it for Papaya HatidGo in <em>Settings › Apps › Papaya HatidGo › Permissions</em>. You can always drag the map to the right spot instead.</p></div>
+      </details>
+      <details>
+        <summary>It says "We're not in this area yet."</summary>
+        <div><p>Rides are only inside the Papaya service area. Move the pin to a place inside it.</p></div>
+      </details>
+      <details>
+        <summary>I don't hear about my ride when the app is closed.</summary>
+        <div><p>Turn on notifications: phone <em>Settings › Apps › Papaya HatidGo › Notifications</em>. Drivers should also keep the volume up to hear new requests.</p></div>
+      </details>
+      <details>
+        <summary>Why can't I cancel after the driver is on the way?</summary>
+        <div><p>So drivers don't waste a trip. If the driver still hasn't arrived after the time shown on your ride screen, the Cancel button comes back.</p></div>
+      </details>
+      <details>
+        <summary>Why is the final fare different from the estimate?</summary>
+        <div><p>For Balikan, the waiting fee uses the time you really waited, and if you didn't come back, there's no way-back fare. A ride always keeps the fare rules from when it was booked, even if the admin changes the prices later.</p></div>
+      </details>
+      <details>
+        <summary>As a driver, I don't see any requests.</summary>
+        <div><p>Make sure you're <em>online</em>, your location is on, and your documents, tricycle and subscription are all approved and active. Requests only appear while someone is booking.</p></div>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Papaya HatidGo · a BSIT project · Tricycle rides in Papaya</span>
+    <button type="button" class="theme-toggle" id="theme-toggle">Dark mode</button>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // The APK sits next to this page, so the QR code always matches wherever the site is hosted.
+  const APK_FILE = 'papaya-hatidgo.apk';
+  const apkUrl = new URL(APK_FILE, location.href).href;
+
+  document.getElementById('qr-link').textContent = apkUrl;
+  if (window.QRCode) {
+    new QRCode(document.getElementById('qr'), {
+      text: apkUrl, width: 216, height: 216, colorDark: '#1c1714', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  } else {
+    document.getElementById('qr').textContent = 'The QR code needs the internet to load. Use the link below.';
+  }
+
+  // A phone can't open "localhost": say so instead of showing a code that leads nowhere.
+  if (['localhost', '127.0.0.1', '::1', '[::1]'].includes(location.hostname) || location.protocol === 'file:') {
+    document.getElementById('qr-local').hidden = false;
+  }
+
+  // Show the file size, or say the APK isn't uploaded yet.
+  fetch(APK_FILE, { method: 'HEAD' }).then((res) => {
+    const type = res.headers.get('content-type') || '';
+    if (!res.ok || type.includes('text/html')) throw new Error('missing');
+    const bytes = Number(res.headers.get('content-length'));
+    if (bytes) document.getElementById('apk-meta').textContent = `Version 1.0 · ${(bytes / 1048576).toFixed(1)} MB · Android app file (.apk)`;
+  }).catch(() => {
+    const button = document.getElementById('apk-button');
+    button.setAttribute('aria-disabled', 'true');
+    button.removeAttribute('href');
+    document.getElementById('apk-label').textContent = 'APK coming soon';
+    document.getElementById('apk-meta').textContent = "The app file hasn't been uploaded to this page yet.";
+  });
+
+  // Light / dark switch (remembered on this browser only).
+  const root = document.documentElement;
+  const toggle = document.getElementById('theme-toggle');
+  const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const label = () => { toggle.textContent = isDark() ? 'Light mode' : 'Dark mode'; };
+  try { const saved = localStorage.getItem('hg-theme'); if (saved) root.dataset.theme = saved; } catch {}
+  label();
+  toggle.addEventListener('click', () => {
+    root.dataset.theme = isDark() ? 'light' : 'dark';
+    try { localStorage.setItem('hg-theme', root.dataset.theme); } catch {}
+    label();
+  });
+</script>
+</body>
+</html>
