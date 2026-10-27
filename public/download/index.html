@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/download/">
+<script>
+  // Opened as /download (no slash): continue at /download/, so the section links scroll in place.
+  if (location.pathname === '/download') location.replace('/download/' + location.search + location.hash);
+</script>
 <title>Papaya HatidGo App</title>
 <meta name="description" content="Download the Papaya HatidGo Android app and learn how to use it as a passenger or a tricycle driver.">
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
@@ -641,7 +646,7 @@
 <script>
   // The APK sits next to this page, so the QR code always matches wherever the site is hosted.
   const APK_FILE = 'papaya-hatidgo.apk';
-  const apkUrl = new URL(APK_FILE, location.href).href;
+  const apkUrl = new URL(APK_FILE, document.baseURI).href;
 
   document.getElementById('qr-link').textContent = apkUrl;
   if (window.QRCode) {
