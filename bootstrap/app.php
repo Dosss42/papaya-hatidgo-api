@@ -26,6 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \App\Http\Middleware\SetLocaleFromRequest::class,
         ]);
+
+        // Online (Railway), HTTPS ends at Railway's proxy and the app sees plain HTTP: trust the
+        // proxy's X-Forwarded-* headers, so links Laravel makes (payment return page) stay https.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
